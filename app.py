@@ -6,14 +6,28 @@ from werkzeug.security import generate_password_hash, check_password_hash
 from sqlalchemy import func
 
 app = Flask(__name__)
-app.secret_key = os.environ.get("SECRET_KEY", "local_secret_key")
 
-# DATABASE (bulutta Postgres, localde SQLite)
+# ================== SECURITY / CONFIG ==================
+# Render'da mutlaka Environment'a SECRET_KEY ekle.
+app.secret_key = os.environ.get("SECRET_KEY", "local_dev_secret_key_change_me")
+
+# Cookie güvenlik ayarları (Render prod ortamında daha güvenli)
+app.config["SESSION_COOKIE_HTTPONLY"] = True
+app.config["SESSION_COOKIE_SAMESITE"] = "Lax"
+if os.environ.get("RENDER") or os.environ.get("FLASK_ENV") == "production":
+    app.config["SESSION_COOKIE_SECURE"] = True  # HTTPS üstünden çalışır
+
+# ================== DATABASE (Render Postgres / Local SQLite) ==================
 db_url = os.environ.get("DATABASE_URL")
 if db_url:
+    # Render/Heroku bazen postgres:// verir; SQLAlchemy postgresql:// ister
     db_url = db_url.replace("postgres://", "postgresql://", 1)
+    app.config["SQLALCHEMY_DATABASE_URI"] = db_url
+else:
+    # Lokal: instance/verim.db önerilir (instance klasörü gitignore olur)
+    os.makedirs("instance", exist_ok=True)
+    app.config["SQLALCHEMY_DATABASE_URI"] = "sqlite:///instance/verim.db"
 
-app.config["SQLALCHEMY_DATABASE_URI"] = db_url or "sqlite:///verim.db"
 app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 
 db = SQLAlchemy(app)
@@ -28,7 +42,6 @@ BREAKS = [
 ]
 
 # ================= MODELLER =================
-
 class User(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     username = db.Column(db.String(50), unique=True, nullable=False)
@@ -64,7 +77,6 @@ class Work(db.Model):
     date = db.Column(db.DateTime, default=datetime.now)
 
 # ================= HESAPLAR =================
-
 def parse_time_hhmm(t: str) -> datetime:
     return datetime.strptime(t, "%H:%M")
 
@@ -77,7 +89,6 @@ def calculate_net_seconds(start_str: str, end_str: str) -> int:
 
     total_seconds = int((end - start).total_seconds())
     if total_seconds < 0:
-        # Gece vardiyası vb. yok dedin; yine de negatifse 0 dönelim
         return 0
 
     break_seconds = 0
@@ -91,7 +102,8 @@ def calculate_net_seconds(start_str: str, end_str: str) -> int:
         if overlap_start < overlap_end:
             break_seconds += int((overlap_end - overlap_start).total_seconds())
 
-    return total_seconds - break_seconds
+    net = total_seconds - break_seconds
+    return max(net, 0)
 
 def calculate_efficiency_seconds(
     start_time: str,
@@ -107,12 +119,12 @@ def calculate_efficiency_seconds(
     HedefAdet = NetSüre / StandartParçaSüresi
     Verim% = (GerçekAdet / HedefAdet) * 100
     """
-    net_seconds = calculate_net_seconds(start_time, end_time) - max(downtime_seconds, 0)
+    net_seconds = calculate_net_seconds(start_time, end_time) - max(int(downtime_seconds or 0), 0)
 
     if net_seconds <= 0:
         return 0.0
 
-    standard_per_piece = process_sec_per_piece + setup_sec_per_piece
+    standard_per_piece = int(process_sec_per_piece or 0) + int(setup_sec_per_piece or 0)
     if standard_per_piece <= 0:
         return 0.0
 
@@ -120,7 +132,7 @@ def calculate_efficiency_seconds(
     if target_qty <= 0:
         return 0.0
 
-    eff = (quantity / target_qty) * 100
+    eff = (int(quantity or 0) / target_qty) * 100
     return round(eff, 2)
 
 def get_part_codes():
@@ -134,7 +146,6 @@ def get_part_codes():
     return [p.part_code for p in parts]
 
 # ================= ROUTES =================
-
 @app.route("/")
 def home():
     return redirect("/login")
@@ -228,7 +239,6 @@ def operator_panel():
         db.session.add(new_work)
         db.session.commit()
 
-        # Operatör verim görmez
         return render_template(
             "operator.html",
             operations=OPERATIONS,
@@ -248,7 +258,6 @@ def admin():
     if request.method == "POST":
         action = request.form.get("action", "")
 
-        # Kullanıcı ekle
         if action == "add_user":
             username = request.form["username"].strip()
             password = request.form["password"].strip()
@@ -264,7 +273,6 @@ def admin():
                 db.session.commit()
                 message = "Kullanıcı eklendi ✅"
 
-        # Tek tek parça ekle/güncelle (dk+sn)
         elif action == "upsert_part":
             part_code = request.form["part_code"].strip()
             operation = request.form["operation"].strip()
@@ -284,10 +292,6 @@ def admin():
                 db.session.commit()
                 message = "Parça kaydedildi ✅"
 
-        # Excel import (senin formatına göre):
-        # Parça Adı | BİRİNCİ OPERASYON | İKİNCİ OPERASYON | YARGI | AYAR
-        # Hücre 0 ise: o operasyon yok -> ekleme
-        # Tüm değerler saniye
         elif action == "import_excel":
             file = request.files.get("excel_file")
             if not file or file.filename == "":
@@ -337,11 +341,10 @@ def admin():
 
                             try:
                                 setup_seconds = int(float(cell_value))
-                            except:
+                            except Exception:
                                 skipped += 1
                                 continue
 
-                            # 0 = o operasyon yok
                             if setup_seconds <= 0:
                                 continue
 
@@ -360,7 +363,6 @@ def admin():
                     if not message:
                         message = f"Excel yükleme hatası: {e}"
 
-    # Haftalık sıralama (son 7 gün)
     week_start = datetime.now() - timedelta(days=7)
     weekly_rows = (
         db.session.query(
@@ -392,7 +394,6 @@ def admin():
     )
 
 # ====== ADMIN DELETE ROUTES ======
-
 @app.route("/admin/delete_user/<int:user_id>", methods=["POST"])
 def admin_delete_user(user_id):
     if session.get("role") != "admin":
@@ -416,21 +417,34 @@ def admin_delete_work(work_id):
     db.session.commit()
     return redirect("/admin")
 
-# ================= INIT =================
-
-if __name__ == "__main__":
+# ================= INIT (Render + Gunicorn ile de çalışır) =================
+def ensure_db_and_admin():
     with app.app_context():
         db.create_all()
 
-        # İlk admin otomatik oluştur
-        if not User.query.filter_by(username="admin").first():
-            db.session.add(
-                User(
-                    username="admin",
-                    password_hash=generate_password_hash("admin123"),
-                    role="admin",
-                )
-            )
-            db.session.commit()
+        # Güvenlik: Render'da otomatik admin oluşturmak için env ile aç/kapat
+        # ADMIN_CREATE=true, ADMIN_PASSWORD=..., (opsiyonel) ADMIN_USERNAME=admin
+        create_admin = (os.environ.get("ADMIN_CREATE", "false").lower() == "true")
+        admin_username = os.environ.get("ADMIN_USERNAME", "admin")
+        admin_password = os.environ.get("ADMIN_PASSWORD")
 
-    app.run(debug=True)
+        if create_admin:
+            if not admin_password or len(admin_password) < 6:
+                # Şifre env yoksa admin oluşturmayalım (güvenlik)
+                return
+
+            if not User.query.filter_by(username=admin_username).first():
+                db.session.add(
+                    User(
+                        username=admin_username,
+                        password_hash=generate_password_hash(admin_password),
+                        role="admin",
+                    )
+                )
+                db.session.commit()
+
+ensure_db_and_admin()
+
+if __name__ == "__main__":
+    # Local çalıştırma
+    app.run(host="127.0.0.1", port=5000, debug=True)
