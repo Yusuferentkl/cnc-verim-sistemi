@@ -13,3 +13,5 @@ venv/
 instance/
 *.db
 __pycache__/
+Build/
+Deploy/
