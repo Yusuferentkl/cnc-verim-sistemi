@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Operatör Paneli</title>
+</head>
+<body>
+
+<h2>Operatör Paneli</h2>
+
+{% if message %}
+  <p style="color:green; font-weight:bold;">{{ message }}</p>
+{% endif %}
+
+<form method="POST">
+
+  <label>Parça Kodu (Ara):</label><br>
+  <input type="text" name="part_code" list="part_list" placeholder="Parça adını yaz..." required>
+  <datalist id="part_list">
+    {% for code in part_codes %}
+      <option value="{{ code }}"></option>
+    {% endfor %}
+  </datalist>
+  <br><br>
+
+  <label>Seçenek:</label><br>
+  <select name="operation" required>
+    {% for op in operations %}
+      <option value="{{ op }}">{{ op }}</option>
+    {% endfor %}
+  </select><br><br>
+
+  <label>Başlangıç Saati:</label><br>
+  <input type="time" name="start_time" required><br><br>
+
+  <label>Bitiş Saati:</label><br>
+  <input type="time" name="end_time" required><br><br>
+
+  <label>1 Parça Süresi:</label><br>
+  Dakika:
+  <input type="number" name="process_min" min="0" required>
+  Saniye:
+  <input type="number" name="process_sec_part" min="0" max="59" required>
+  <br><br>
+
+  <label>Üretilen Adet:</label><br>
+  <input type="number" name="quantity" min="0" required><br><br>
+
+  <hr>
+  <h3>Kayıp Zaman</h3>
+
+  <label>Sebep:</label><br>
+  <input type="text" name="downtime_reason" placeholder="Örn: takım kırıldı / ölçüm / malzeme bekleme"><br><br>
+
+  Dakika:
+  <input type="number" name="downtime_min" min="0" value="0">
+  Saniye:
+  <input type="number" name="downtime_sec_part" min="0" max="59" value="0">
+  <br><br>
+
+  <button type="submit">Kaydı Gönder</button>
+
+</form>
+
+<br>
+<a href="/logout">Çıkış</a>
+
+</body>
+</html>
