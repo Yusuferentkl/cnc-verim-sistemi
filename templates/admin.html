@@ -1,161 +1,37 @@
-<!DOCTYPE html>
-<html>
-<head>
-  <title>Admin Paneli</title>
-</head>
-<body>
-
-<h2>Admin Paneli</h2>
-
-{% if message %}
-  <p style="color:green; font-weight:bold;">{{ message }}</p>
-{% endif %}
-
 <hr>
-<h3>Haftalık Ortalama Verim (Son 7 Gün) - Sıralama</h3>
+<h3>Mola Yönetimi</h3>
 
-<table border="1" cellpadding="6">
-  <tr>
-    <th>Sıra</th>
-    <th>Operatör</th>
-    <th>Ortalama Verim %</th>
-    <th>Kayıt Sayısı</th>
-  </tr>
-  {% for row in weekly_rank %}
-  <tr>
-    <td>{{ loop.index }}</td>
-    <td>{{ row.operator }}</td>
-    <td>{{ row.avg_eff }}</td>
-    <td>{{ row.count }}</td>
-  </tr>
-  {% endfor %}
-</table>
-<hr>
-
-<h3>Yeni Kullanıcı Ekle</h3>
-<form method="POST">
-  <input type="hidden" name="action" value="add_user">
-
-  Kullanıcı Adı:
-  <input type="text" name="username" required>
-
-  Şifre:
-  <input type="password" name="password" required>
-
-  Rol:
-  <select name="role">
-    <option value="operator">Operatör</option>
-    <option value="admin">Admin</option>
-  </select>
-
-  <button type="submit">Ekle</button>
+<form method="post" style="display:flex; gap:10px; align-items:center; flex-wrap:wrap;">
+  <input type="hidden" name="action" value="add_break">
+  <label>Başlangıç:</label>
+  <input type="time" name="break_start" required>
+  <label>Bitiş:</label>
+  <input type="time" name="break_end" required>
+  <button type="submit">Mola Ekle</button>
 </form>
-
-<hr>
-
-<h3>Excel ile Toplu Parça Yükle (.xlsx)</h3>
-<p>Format: Parça Adı | BİRİNCİ OPERASYON | İKİNCİ OPERASYON | YARGI | AYAR (değerler saniye, 0=YOK)</p>
-
-<form method="POST" enctype="multipart/form-data">
-  <input type="hidden" name="action" value="import_excel">
-  <input type="file" name="excel_file" accept=".xlsx" required>
-  <button type="submit">Yükle</button>
-</form>
-
-<hr>
-
-<h3>Tek Tek Parça + Seçenek için Sök-Tak (Parça Başına)</h3>
-<form method="POST">
-  <input type="hidden" name="action" value="upsert_part">
-
-  Parça Kodu:
-  <input type="text" name="part_code" required>
-
-  Seçenek:
-  <select name="operation" required>
-    {% for op in operations %}
-      <option value="{{ op }}">{{ op }}</option>
-    {% endfor %}
-  </select>
-
-  Sök-Tak:
-  Dakika:
-  <input type="number" name="setup_min" min="0" required>
-  Saniye:
-  <input type="number" name="setup_sec_part" min="0" max="59" required>
-
-  <button type="submit">Kaydet</button>
-</form>
-
-<hr>
-
-<h3>Kullanıcılar</h3>
-<table border="1" cellpadding="6">
-  <tr>
-    <th>Kullanıcı</th>
-    <th>Rol</th>
-    <th>İşlem</th>
-  </tr>
-  {% for u in users %}
-  <tr>
-    <td>{{ u.username }}</td>
-    <td>{{ u.role }}</td>
-    <td>
-      {% if u.username != "admin" %}
-      <form method="POST" action="/admin/delete_user/{{ u.id }}" style="display:inline;">
-        <button type="submit" onclick="return confirm('Bu kullanıcı silinsin mi?');">Sil</button>
-      </form>
-      {% else %}
-        -
-      {% endif %}
-    </td>
-  </tr>
-  {% endfor %}
-</table>
-
-<hr>
-
-<h3>Son Kayıtlar (200)</h3>
-<table border="1" cellpadding="6">
-  <tr>
-    <th>Tarih</th>
-    <th>Operatör</th>
-    <th>Parça</th>
-    <th>Seçenek</th>
-    <th>Başlangıç</th>
-    <th>Bitiş</th>
-    <th>Parça Süresi (sn)</th>
-    <th>Adet</th>
-    <th>Kayıp (sn)</th>
-    <th>Kayıp Sebep</th>
-    <th>Verim %</th>
-    <th>İşlem</th>
-  </tr>
-
-  {% for w in works %}
-  <tr>
-    <td>{{ w.date }}</td>
-    <td>{{ w.operator }}</td>
-    <td>{{ w.part_code }}</td>
-    <td>{{ w.operation }}</td>
-    <td>{{ w.start_time }}</td>
-    <td>{{ w.end_time }}</td>
-    <td>{{ w.process_time_sec }}</td>
-    <td>{{ w.quantity }}</td>
-    <td>{{ w.downtime_seconds }}</td>
-    <td>{{ w.downtime_reason or "" }}</td>
-    <td>{{ w.efficiency }}</td>
-    <td>
-      <form method="POST" action="/admin/delete_work/{{ w.id }}" style="display:inline;">
-        <button type="submit" onclick="return confirm('Bu kayıt silinsin mi?');">Sil</button>
-      </form>
-    </td>
-  </tr>
-  {% endfor %}
-</table>
 
 <br>
-<a href="/logout">Çıkış</a>
 
-</body>
-</html>
+<table border="1" cellpadding="6" cellspacing="0">
+  <thead>
+    <tr>
+      <th>Başlangıç</th>
+      <th>Bitiş</th>
+      <th>Sil</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for br in breaks %}
+    <tr>
+      <td>{{ br.start_time }}</td>
+      <td>{{ br.end_time }}</td>
+      <td>
+        <form method="post" action="/admin/delete_break/{{ br.id }}"
+              onsubmit="return confirm('Bu molayı silmek istiyor musun?');">
+          <button type="submit">Sil</button>
+        </form>
+      </td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
