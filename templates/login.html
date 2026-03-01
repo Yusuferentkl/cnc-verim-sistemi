@@ -4,36 +4,40 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Giriş • CNC Verim</title>
+
   <style>
     :root{
-      --bg1:#0b1220;
-      --bg2:#101b33;
-      --card:#0f172a;
-      --muted:#94a3b8;
       --text:#e2e8f0;
-      --border:rgba(148,163,184,.18);
-      --btn:#2563eb;
-      --btn2:#1d4ed8;
-      --danger:#ef4444;
+      --muted:#94a3b8;
+      --border:rgba(255,255,255,.16);
+      --card:rgba(15,23,42,.75);
       --ring:rgba(37,99,235,.35);
+      --btn1:#2563eb;
+      --btn2:#1d4ed8;
     }
     *{ box-sizing:border-box; }
+    html, body{ height:100%; }
+
     body{
       margin:0;
       min-height:100vh;
       display:grid;
       place-items:center;
-      background:
-        radial-gradient(1000px 600px at 20% 20%, rgba(37,99,235,.22), transparent 60%),
-        radial-gradient(900px 600px at 80% 70%, rgba(16,185,129,.12), transparent 55%),
-        linear-gradient(135deg, var(--bg1), var(--bg2));
       color:var(--text);
       font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial, "Noto Sans", "Helvetica Neue", sans-serif;
+
+      /* Şirket arka plan resmi + karartma */
+      background:
+        linear-gradient(rgba(0,0,0,.65), rgba(0,0,0,.65)),
+        url("{{ url_for('static', filename='images/company-bg.jpg') }}") center/cover no-repeat fixed;
     }
+
     .wrap{
-      width: min(420px, 92vw);
-      padding: 22px;
+      width:min(440px, 92vw);
+      padding:22px;
     }
+
+    /* Üst marka alanı */
     .brand{
       display:flex;
       align-items:center;
@@ -44,6 +48,7 @@
       width:44px;height:44px;border-radius:14px;
       background: linear-gradient(135deg, rgba(37,99,235,1), rgba(16,185,129,1));
       box-shadow: 0 14px 40px rgba(0,0,0,.35);
+      flex:0 0 auto;
     }
     .brand h1{
       font-size:18px;
@@ -55,14 +60,18 @@
       color:var(--muted);
       font-size:13px;
     }
+
+    /* Cam efektli kart */
     .card{
-      background: rgba(15,23,42,.72);
+      background: var(--card);
       border:1px solid var(--border);
       border-radius: 18px;
-      padding: 18px;
-      box-shadow: 0 18px 60px rgba(0,0,0,.35);
-      backdrop-filter: blur(10px);
+      padding: 22px;
+      box-shadow: 0 20px 60px rgba(0,0,0,.45);
+      backdrop-filter: blur(8px);
+      -webkit-backdrop-filter: blur(8px);
     }
+
     .title{
       margin:0 0 6px 0;
       font-size:18px;
@@ -71,14 +80,16 @@
       margin:0 0 14px 0;
       color:var(--muted);
       font-size:13px;
-      line-height:1.4;
+      line-height:1.45;
     }
+
     label{
       display:block;
       margin: 10px 0 6px 0;
       font-size: 12px;
       color: var(--muted);
     }
+
     .input{
       width:100%;
       padding: 11px 12px;
@@ -92,54 +103,43 @@
       border-color: rgba(37,99,235,.55);
       box-shadow: 0 0 0 4px var(--ring);
     }
-    .row{
-      display:flex;
-      align-items:center;
-      justify-content:space-between;
-      gap:10px;
-      margin-top: 10px;
-    }
+
     .hint{
+      margin-top:10px;
       font-size:12px;
       color: var(--muted);
     }
+
     .btn{
       width:100%;
       margin-top: 14px;
       padding: 11px 12px;
       border:none;
       border-radius: 12px;
-      background: linear-gradient(135deg, var(--btn), var(--btn2));
+      background: linear-gradient(135deg, var(--btn1), var(--btn2));
       color:white;
-      font-weight: 600;
+      font-weight: 700;
       cursor:pointer;
       box-shadow: 0 14px 40px rgba(37,99,235,.25);
     }
     .btn:active{ transform: translateY(1px); }
+
     .footer{
       margin-top: 12px;
       text-align:center;
-      color: var(--muted);
+      color: rgba(148,163,184,.95);
       font-size: 12px;
-    }
-    .error{
-      margin-top: 10px;
-      padding: 10px 12px;
-      border-radius: 12px;
-      background: rgba(239,68,68,.12);
-      border: 1px solid rgba(239,68,68,.25);
-      color: #fecaca;
-      font-size: 13px;
     }
   </style>
 </head>
+
 <body>
   <div class="wrap">
     <div class="brand">
-      <div class="logo"></div>
+      <div class="logo" aria-hidden="true"></div>
       <div>
         <h1>CNC Verim Sistemi</h1>
-        <p>Operatör giriş • Admin panel</p>
+        <p>Operatör ve Admin giriş ekranı</p>
       </div>
     </div>
 
@@ -147,7 +147,7 @@
       <h2 class="title">Giriş</h2>
       <p class="subtitle">Kullanıcı adın ve şifrenle giriş yap. Yetkine göre panel otomatik açılır.</p>
 
-      <!-- Kodun POST alanlarıyla uyumlu: username / password -->
+      <!-- app.py ile uyumlu: username / password -->
       <form method="post" action="/login" autocomplete="on">
         <label for="username">Kullanıcı adı</label>
         <input class="input" id="username" name="username" type="text" placeholder="örn: operator1" required />
@@ -155,17 +155,13 @@
         <label for="password">Şifre</label>
         <input class="input" id="password" name="password" type="password" placeholder="••••••••" required />
 
-        <div class="row">
-          <span class="hint">Güvenlik için şifreni kimseyle paylaşma.</span>
-        </div>
+        <div class="hint">Güvenlik için şifreni kimseyle paylaşma.</div>
 
         <button class="btn" type="submit">Giriş Yap</button>
       </form>
-
-      <!-- Eğer istersen login route’unu message ile render edecek şekilde güncelleyebiliriz -->
-      <!-- <div class="error">Hatalı giriş!</div> -->
-      <div class="footer">© {{ (datetime.utcnow().year if datetime is defined else "") }} CNC Verim</div>
     </div>
+
+    <div class="footer">© CNC Verim</div>
   </div>
 </body>
 </html>
