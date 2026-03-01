@@ -1,37 +1,254 @@
-<hr>
-<h3>Mola Yönetimi</h3>
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Admin Panel</title>
+  <style>
+    body { font-family: Arial, sans-serif; margin: 18px; }
+    .topbar { display:flex; justify-content:space-between; align-items:center; gap:12px; flex-wrap:wrap; }
+    .card { border:1px solid #ddd; border-radius:10px; padding:14px; margin:14px 0; }
+    .row { display:flex; gap:10px; flex-wrap:wrap; align-items:center; }
+    input, select, button { padding:8px; }
+    table { width:100%; border-collapse:collapse; margin-top:10px; }
+    th, td { border:1px solid #ddd; padding:8px; text-align:left; }
+    th { background:#f6f6f6; }
+    .msg { padding:10px; background:#f0fff0; border:1px solid #c8f3c8; border-radius:8px; margin:10px 0; }
+    .danger { background:#ffecec; border:1px solid #ffb9b9; padding:8px 10px; border-radius:8px; }
+    .small { font-size: 12px; color:#666; }
+    .btn-danger { background:#d9534f; color:white; border:none; border-radius:8px; cursor:pointer; }
+    .btn { border:none; border-radius:8px; cursor:pointer; }
+    .btn-primary { background:#2d6cdf; color:white; }
+    .btn-secondary { background:#444; color:white; }
+    .inline { display:inline; }
+  </style>
+</head>
+<body>
 
-<form method="post" style="display:flex; gap:10px; align-items:center; flex-wrap:wrap;">
-  <input type="hidden" name="action" value="add_break">
-  <label>Başlangıç:</label>
-  <input type="time" name="break_start" required>
-  <label>Bitiş:</label>
-  <input type="time" name="break_end" required>
-  <button type="submit">Mola Ekle</button>
-</form>
+  <div class="topbar">
+    <h2>Admin Panel</h2>
+    <div class="row">
+      <a href="/logout"><button class="btn btn-secondary" type="button">Çıkış Yap</button></a>
+    </div>
+  </div>
 
-<br>
+  {% if message %}
+    <div class="msg">{{ message }}</div>
+  {% endif %}
 
-<table border="1" cellpadding="6" cellspacing="0">
-  <thead>
-    <tr>
-      <th>Başlangıç</th>
-      <th>Bitiş</th>
-      <th>Sil</th>
-    </tr>
-  </thead>
-  <tbody>
-    {% for br in breaks %}
-    <tr>
-      <td>{{ br.start_time }}</td>
-      <td>{{ br.end_time }}</td>
-      <td>
-        <form method="post" action="/admin/delete_break/{{ br.id }}"
-              onsubmit="return confirm('Bu molayı silmek istiyor musun?');">
-          <button type="submit">Sil</button>
-        </form>
-      </td>
-    </tr>
-    {% endfor %}
-  </tbody>
-</table>
+  <!-- ============== MOLA YÖNETİMİ ============== -->
+  <div class="card">
+    <h3>Mola Yönetimi</h3>
+
+    <form method="post" class="row">
+      <input type="hidden" name="action" value="add_break">
+      <label>Başlangıç</label>
+      <input type="time" name="break_start" required>
+      <label>Bitiş</label>
+      <input type="time" name="break_end" required>
+      <button class="btn btn-primary" type="submit">Mola Ekle</button>
+    </form>
+
+    <div class="small" style="margin-top:8px;">
+      Not: Molalar saat aralığına çakıştığı kadar net süreden düşer.
+    </div>
+
+    <table>
+      <thead>
+        <tr>
+          <th>Başlangıç</th>
+          <th>Bitiş</th>
+          <th>Sil</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for br in breaks %}
+        <tr>
+          <td>{{ br.start_time }}</td>
+          <td>{{ br.end_time }}</td>
+          <td>
+            <form method="post" action="/admin/delete_break/{{ br.id }}" class="inline"
+                  onsubmit="return confirm('Bu molayı silmek istiyor musun?');">
+              <button class="btn btn-danger" type="submit">Sil</button>
+            </form>
+          </td>
+        </tr>
+        {% endfor %}
+        {% if breaks|length == 0 %}
+        <tr>
+          <td colspan="3" class="small">Henüz mola eklenmemiş.</td>
+        </tr>
+        {% endif %}
+      </tbody>
+    </table>
+  </div>
+
+  <!-- ============== KULLANICI EKLE ============== -->
+  <div class="card">
+    <h3>Kullanıcı Ekle</h3>
+    <form method="post" class="row">
+      <input type="hidden" name="action" value="add_user">
+
+      <input type="text" name="username" placeholder="Kullanıcı adı" required>
+      <input type="password" name="password" placeholder="Şifre" required>
+
+      <select name="role" required>
+        <option value="" disabled selected>Rol seç</option>
+        <option value="admin">admin</option>
+        <option value="operator">operator</option>
+      </select>
+
+      <button class="btn btn-primary" type="submit">Kullanıcı Ekle</button>
+    </form>
+
+    <table>
+      <thead>
+        <tr>
+          <th>ID</th>
+          <th>Kullanıcı</th>
+          <th>Rol</th>
+          <th>Sil</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for u in users %}
+        <tr>
+          <td>{{ u.id }}</td>
+          <td>{{ u.username }}</td>
+          <td>{{ u.role }}</td>
+          <td>
+            {% if u.username == "admin" %}
+              <span class="small">Silinemez</span>
+            {% else %}
+              <form method="post" action="/admin/delete_user/{{ u.id }}" class="inline"
+                    onsubmit="return confirm('Bu kullanıcı silinsin mi?');">
+                <button class="btn btn-danger" type="submit">Sil</button>
+              </form>
+            {% endif %}
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+
+  <!-- ============== PARÇA EKLE / GÜNCELLE ============== -->
+  <div class="card">
+    <h3>Parça Ekle / Güncelle</h3>
+    <form method="post" class="row">
+      <input type="hidden" name="action" value="upsert_part">
+
+      <input type="text" name="part_code" placeholder="Parça adı / kodu" required style="min-width:260px;">
+
+      <select name="operation" required>
+        <option value="" disabled selected>Operasyon seç</option>
+        {% for op in operations %}
+          <option value="{{ op }}">{{ op }}</option>
+        {% endfor %}
+      </select>
+
+      <label>Setup dk</label>
+      <input type="number" name="setup_min" min="0" value="0" required style="width:90px;">
+      <label>Setup sn</label>
+      <input type="number" name="setup_sec_part" min="0" max="59" value="0" required style="width:90px;">
+
+      <button class="btn btn-primary" type="submit">Kaydet</button>
+    </form>
+
+    <div class="small" style="margin-top:8px;">
+      Excel import ile toplu da yükleyebilirsin.
+    </div>
+  </div>
+
+  <!-- ============== EXCEL IMPORT ============== -->
+  <div class="card">
+    <h3>Excel Import (.xlsx)</h3>
+    <div class="small">
+      Format: Parça Adı | BİRİNCİ OPERASYON | İKİNCİ OPERASYON | YARGI | AYAR (değerler saniye)
+    </div>
+    <form method="post" enctype="multipart/form-data" class="row" style="margin-top:10px;">
+      <input type="hidden" name="action" value="import_excel">
+      <input type="file" name="excel_file" accept=".xlsx" required>
+      <button class="btn btn-primary" type="submit">Yükle</button>
+    </form>
+  </div>
+
+  <!-- ============== HAFTALIK SIRALAMA ============== -->
+  <div class="card">
+    <h3>Haftalık Verim Sıralaması (Son 7 Gün)</h3>
+    <table>
+      <thead>
+        <tr>
+          <th>Operatör</th>
+          <th>Ortalama Verim (%)</th>
+          <th>Kayıt Sayısı</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for r in weekly_rank %}
+        <tr>
+          <td>{{ r.operator }}</td>
+          <td>{{ r.avg_eff }}</td>
+          <td>{{ r.count }}</td>
+        </tr>
+        {% endfor %}
+        {% if weekly_rank|length == 0 %}
+        <tr>
+          <td colspan="3" class="small">Son 7 günde kayıt yok.</td>
+        </tr>
+        {% endif %}
+      </tbody>
+    </table>
+  </div>
+
+  <!-- ============== SON KAYITLAR ============== -->
+  <div class="card">
+    <h3>Son Kayıtlar (Son 200)</h3>
+    <table>
+      <thead>
+        <tr>
+          <th>Tarih</th>
+          <th>Operatör</th>
+          <th>Parça</th>
+          <th>Operasyon</th>
+          <th>Başla</th>
+          <th>Bitir</th>
+          <th>Adet</th>
+          <th>Verim %</th>
+          <th>Kayıp (sn)</th>
+          <th>Kayıp Nedeni</th>
+          <th>Sil</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for w in works %}
+        <tr>
+          <td>{{ w.date }}</td>
+          <td>{{ w.operator }}</td>
+          <td>{{ w.part_code }}</td>
+          <td>{{ w.operation }}</td>
+          <td>{{ w.start_time }}</td>
+          <td>{{ w.end_time }}</td>
+          <td>{{ w.quantity }}</td>
+          <td>{{ w.efficiency }}</td>
+          <td>{{ w.downtime_seconds }}</td>
+          <td>{{ w.downtime_reason or "" }}</td>
+          <td>
+            <form method="post" action="/admin/delete_work/{{ w.id }}" class="inline"
+                  onsubmit="return confirm('Bu kaydı silmek istiyor musun?');">
+              <button class="btn btn-danger" type="submit">Sil</button>
+            </form>
+          </td>
+        </tr>
+        {% endfor %}
+        {% if works|length == 0 %}
+        <tr>
+          <td colspan="11" class="small">Henüz kayıt yok.</td>
+        </tr>
+        {% endif %}
+      </tbody>
+    </table>
+  </div>
+
+</body>
+</html>
