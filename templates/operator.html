@@ -1,68 +1,94 @@
 <!DOCTYPE html>
-<html>
+<html lang="tr">
 <head>
-  <title>Operatör Paneli</title>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Operatör Paneli</title>
+
+<style>
+:root{
+  --bg:#111;
+  --card:rgba(20,20,20,.85);
+  --text:#f5f5f5;
+  --border:rgba(255,120,0,.25);
+  --accent:#ff7a00;
+  --accent2:#ff3c00;
+}
+
+body{
+  margin:0;
+  background:#111;
+  color:var(--text);
+  font-family:Segoe UI,sans-serif;
+  padding:20px;
+}
+
+.card{
+  background:var(--card);
+  border:1px solid var(--border);
+  border-radius:18px;
+  padding:20px;
+  margin-bottom:20px;
+  box-shadow:0 0 40px rgba(255,120,0,.2);
+}
+
+button{
+  background:linear-gradient(135deg,var(--accent),var(--accent2));
+  border:none;
+  padding:10px 16px;
+  border-radius:10px;
+  color:white;
+  font-weight:600;
+  cursor:pointer;
+}
+
+input, select{
+  padding:8px;
+  border-radius:8px;
+  border:1px solid var(--border);
+  background:#222;
+  color:white;
+}
+</style>
 </head>
+
 <body>
 
 <h2>Operatör Paneli</h2>
+<a href="/logout">Çıkış Yap</a>
 
-{% if message %}
-  <p style="color:green; font-weight:bold;">{{ message }}</p>
-{% endif %}
+<div class="card">
 
-<form method="POST">
+<form method="post">
 
-  <label>Parça Kodu (Ara):</label><br>
-  <input type="text" name="part_code" list="part_list" placeholder="Parça adını yaz..." required>
-  <datalist id="part_list">
-    {% for code in part_codes %}
-      <option value="{{ code }}"></option>
-    {% endfor %}
-  </datalist>
-  <br><br>
+Parça:
+<select name="part_code">
+{% for p in part_codes %}
+<option value="{{ p }}">{{ p }}</option>
+{% endfor %}
+</select>
 
-  <label>Seçenek:</label><br>
-  <select name="operation" required>
-    {% for op in operations %}
-      <option value="{{ op }}">{{ op }}</option>
-    {% endfor %}
-  </select><br><br>
+Operasyon:
+<select name="operation">
+{% for op in operations %}
+<option value="{{ op }}">{{ op }}</option>
+{% endfor %}
+</select>
 
-  <label>Başlangıç Saati:</label><br>
-  <input type="time" name="start_time" required><br><br>
+Başlangıç:
+<input type="time" name="start_time">
 
-  <label>Bitiş Saati:</label><br>
-  <input type="time" name="end_time" required><br><br>
+Bitiş:
+<input type="time" name="end_time">
 
-  <label>1 Parça Süresi:</label><br>
-  Dakika:
-  <input type="number" name="process_min" min="0" required>
-  Saniye:
-  <input type="number" name="process_sec_part" min="0" max="59" required>
-  <br><br>
+Adet:
+<input type="number" name="quantity">
 
-  <label>Üretilen Adet:</label><br>
-  <input type="number" name="quantity" min="0" required><br><br>
-
-  <hr>
-  <h3>Kayıp Zaman</h3>
-
-  <label>Sebep:</label><br>
-  <input type="text" name="downtime_reason" placeholder="Örn: takım kırıldı / ölçüm / malzeme bekleme"><br><br>
-
-  Dakika:
-  <input type="number" name="downtime_min" min="0" value="0">
-  Saniye:
-  <input type="number" name="downtime_sec_part" min="0" max="59" value="0">
-  <br><br>
-
-  <button type="submit">Kaydı Gönder</button>
+<button type="submit">Kaydet</button>
 
 </form>
 
-<br>
-<a href="/logout">Çıkış</a>
+</div>
 
 </body>
 </html>
