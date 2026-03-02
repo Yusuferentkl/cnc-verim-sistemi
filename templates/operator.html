@@ -1,161 +1,217 @@
 <!DOCTYPE html>
 <html lang="tr">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Operatör Paneli</title>
-  <style>
-    :root{
-      --bg:#0f0f0f;
-      --card:rgba(20,20,20,.85);
-      --text:#f5f5f5;
-      --muted:#cfcfcf;
-      --border:rgba(255,120,0,.25);
-      --ring:rgba(255,120,0,.35);
-      --btn1:#ff7a00;
-      --btn2:#ff3c00;
-    }
-    *{ box-sizing:border-box; }
-    body{ margin:0; background:var(--bg); color:var(--text); font-family:Segoe UI, sans-serif; padding:18px; }
-    a{ color:#ffb26a; text-decoration:none; }
-    .top{ display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px; margin-bottom:14px; }
-    .card{
-      background:var(--card);
-      border:1px solid var(--border);
-      border-radius:18px;
-      padding:18px;
-      box-shadow:0 0 40px rgba(255,120,0,.18);
-    }
-    .msg{ margin:12px 0; padding:10px 12px; border-radius:12px; border:1px solid rgba(255,120,0,.25); background:rgba(255,120,0,.08); color:var(--text); }
-    label{ display:block; font-size:13px; color:var(--muted); margin:10px 0 6px; }
-    input, select{
-      width:100%;
-      padding:10px 12px;
-      border-radius:12px;
-      border:1px solid var(--border);
-      background:rgba(0,0,0,.35);
-      color:var(--text);
-      outline:none;
-    }
-    input:focus, select:focus{ box-shadow:0 0 0 3px var(--ring); }
-    .grid{ display:grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap:12px; }
-    @media (max-width:720px){ .grid{ grid-template-columns:1fr; } }
-    .row3{ display:grid; grid-template-columns: 2fr 1fr 1fr; gap:12px; }
-    @media (max-width:720px){ .row3{ grid-template-columns:1fr; } }
-    button{
-      width:100%;
-      margin-top:14px;
-      padding:12px;
-      border:none;
-      border-radius:12px;
-      background:linear-gradient(135deg,var(--btn1),var(--btn2));
-      color:#fff; font-weight:700; cursor:pointer;
-      box-shadow:0 10px 30px rgba(255,100,0,.25);
-    }
-    button:hover{ opacity:.95; }
-    .small{ font-size:12px; color:var(--muted); margin-top:6px; }
-    .section-title{ margin:0 0 8px; }
-  </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Operatör Paneli</title>
+
+<style>
+:root{
+  --bg:#0f0f0f;
+  --card:rgba(20,20,20,.85);
+  --text:#f5f5f5;
+  --muted:#cfcfcf;
+  --border:rgba(255,120,0,.25);
+  --ring:rgba(255,120,0,.35);
+  --btn1:#ff7a00;
+  --btn2:#ff3c00;
+}
+
+*{ box-sizing:border-box; }
+
+body{
+  margin:0;
+  background:var(--bg);
+  color:var(--text);
+  font-family:Segoe UI, sans-serif;
+  padding:20px;
+}
+
+.top{
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  margin-bottom:20px;
+}
+
+a{
+  color:#ffb26a;
+  text-decoration:none;
+}
+
+.card{
+  background:var(--card);
+  border:1px solid var(--border);
+  border-radius:18px;
+  padding:20px;
+  box-shadow:0 0 40px rgba(255,120,0,.2);
+}
+
+label{
+  display:block;
+  font-size:13px;
+  color:var(--muted);
+  margin:12px 0 6px;
+}
+
+input, select{
+  width:100%;
+  padding:10px 12px;
+  border-radius:12px;
+  border:1px solid var(--border);
+  background:rgba(0,0,0,.35);
+  color:var(--text);
+  outline:none;
+}
+
+input:focus{
+  box-shadow:0 0 0 3px var(--ring);
+}
+
+.grid{
+  display:grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap:15px;
+}
+
+@media(max-width:768px){
+  .grid{
+    grid-template-columns:1fr;
+  }
+}
+
+button{
+  width:100%;
+  margin-top:20px;
+  padding:13px;
+  border:none;
+  border-radius:12px;
+  background:linear-gradient(135deg,var(--btn1),var(--btn2));
+  color:white;
+  font-weight:700;
+  cursor:pointer;
+  box-shadow:0 10px 30px rgba(255,100,0,.25);
+}
+
+button:hover{
+  opacity:.95;
+}
+
+.msg{
+  margin-bottom:15px;
+  padding:10px;
+  border-radius:10px;
+  background:rgba(255,120,0,.1);
+  border:1px solid rgba(255,120,0,.3);
+}
+.section-title{
+  margin-top:25px;
+  margin-bottom:10px;
+}
+</style>
 </head>
+
 <body>
 
-  <div class="top">
-    <h2 style="margin:0;">Operatör Paneli</h2>
-    <a href="/logout">Çıkış Yap</a>
+<div class="top">
+  <h2>Operatör Paneli</h2>
+  <a href="/logout">Çıkış Yap</a>
+</div>
+
+{% if message %}
+  <div class="msg">{{ message }}</div>
+{% endif %}
+
+<div class="card">
+
+<form method="post">
+
+<div class="grid">
+
+  <!-- PARÇA ARAMA -->
+  <div>
+    <label>Parça</label>
+    <input list="part_list" name="part_code" placeholder="Parça yaz veya seç..." required>
+
+    <datalist id="part_list">
+      {% for p in part_codes %}
+        <option value="{{ p }}">
+      {% endfor %}
+    </datalist>
   </div>
 
-  {% if message %}
-    <div class="msg">{{ message }}</div>
-  {% endif %}
-
-  <div class="card">
-    <h3 class="section-title">Üretim Kaydı</h3>
-
-    <form method="post">
-      <div class="grid">
-        <div>
-          <label>Parça</label>
-          <select name="part_code" required>
-            {% for p in part_codes %}
-              <option value="{{ p }}">{{ p }}</option>
-            {% endfor %}
-          </select>
-        </div>
-
-        <div>
-          <label>Operasyon</label>
-          <select name="operation" required>
-            {% for op in operations %}
-              <option value="{{ op }}">{{ op }}</option>
-            {% endfor %}
-          </select>
-        </div>
-
-        <div>
-          <label>Başlangıç</label>
-          <input type="time" name="start_time" required>
-        </div>
-
-        <div>
-          <label>Bitiş</label>
-          <input type="time" name="end_time" required>
-        </div>
-
-        <div>
-          <label>Adet</label>
-          <input type="number" name="quantity" min="0" required>
-        </div>
-      </div>
-
-      <hr style="border-color:rgba(255,120,0,.18); margin:16px 0;">
-
-      <h3 class="section-title">Parça Başına İşleme Süresi</h3>
-      <div class="row3">
-        <div>
-          <label>Açıklama</label>
-          <input type="text" value="İşleme süresi (parça başına)" disabled>
-          <div class="small">Dakika + saniye gir.</div>
-        </div>
-        <div>
-          <label>Dakika</label>
-          <input type="number" name="process_min" min="0" value="0" required>
-        </div>
-        <div>
-          <label>Saniye</label>
-          <input type="number" name="process_sec_part" min="0" max="59" value="0" required>
-        </div>
-      </div>
-
-      <hr style="border-color:rgba(255,120,0,.18); margin:16px 0;">
-
-      <h3 class="section-title">Kayıp Zaman</h3>
-      <div class="grid">
-        <div>
-          <label>Kayıp nedeni (opsiyonel)</label>
-          <input type="text" name="downtime_reason" placeholder="Örn: takım kırıldı, ayar, arıza...">
-        </div>
-
-        <div class="row3" style="grid-column: 1 / -1;">
-          <div>
-            <label>Açıklama</label>
-            <input type="text" value="Kayıp süre (toplam)" disabled>
-            <div class="small">Yoksa 0 bırak.</div>
-          </div>
-          <div>
-            <label>Dakika</label>
-            <input type="number" name="downtime_min" min="0" value="0">
-          </div>
-          <div>
-            <label>Saniye</label>
-            <input type="number" name="downtime_sec_part" min="0" max="59" value="0">
-          </div>
-        </div>
-      </div>
-
-      <button type="submit">Kaydı Gönder</button>
-      <div class="small">Not: Operatör panelinde verim yüzdesi gösterilmez.</div>
-    </form>
+  <!-- OPERASYON -->
+  <div>
+    <label>Operasyon</label>
+    <select name="operation" required>
+      {% for op in operations %}
+        <option value="{{ op }}">{{ op }}</option>
+      {% endfor %}
+    </select>
   </div>
+
+  <!-- BAŞLANGIÇ -->
+  <div>
+    <label>Başlangıç Saati</label>
+    <input type="time" name="start_time" required>
+  </div>
+
+  <!-- BİTİŞ -->
+  <div>
+    <label>Bitiş Saati</label>
+    <input type="time" name="end_time" required>
+  </div>
+
+  <!-- ADET -->
+  <div>
+    <label>Üretilen Adet</label>
+    <input type="number" name="quantity" min="0" required>
+  </div>
+
+</div>
+
+<hr style="border-color:rgba(255,120,0,.2); margin:25px 0;">
+
+<h3 class="section-title">Parça Başına İşleme Süresi</h3>
+
+<div class="grid">
+  <div>
+    <label>Dakika</label>
+    <input type="number" name="process_min" min="0" value="0" required>
+  </div>
+
+  <div>
+    <label>Saniye</label>
+    <input type="number" name="process_sec_part" min="0" max="59" value="0" required>
+  </div>
+</div>
+
+<hr style="border-color:rgba(255,120,0,.2); margin:25px 0;">
+
+<h3 class="section-title">Kayıp Zaman</h3>
+
+<div class="grid">
+  <div>
+    <label>Kayıp Nedeni</label>
+    <input type="text" name="downtime_reason" placeholder="Örn: takım kırıldı, ayar, arıza">
+  </div>
+
+  <div>
+    <label>Kayıp Dakika</label>
+    <input type="number" name="downtime_min" min="0" value="0">
+  </div>
+
+  <div>
+    <label>Kayıp Saniye</label>
+    <input type="number" name="downtime_sec_part" min="0" max="59" value="0">
+  </div>
+</div>
+
+<button type="submit">Kaydı Gönder</button>
+
+</form>
+
+</div>
 
 </body>
 </html>
