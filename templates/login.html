@@ -1,167 +1,179 @@
 <!DOCTYPE html>
 <html lang="tr">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Giriş • CNC Verim</title>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CNC Verim Sistemi - Giriş</title>
 
-  <style>
-    :root{
-      --text:#e2e8f0;
-      --muted:#94a3b8;
-      --border:rgba(255,255,255,.16);
-      --card:rgba(15,23,42,.75);
-      --ring:rgba(37,99,235,.35);
-      --btn1:#2563eb;
-      --btn2:#1d4ed8;
-    }
-    *{ box-sizing:border-box; }
-    html, body{ height:100%; }
+<style>
+:root{
+  --text:#f5f5f5;
+  --muted:#cfcfcf;
+  --card:rgba(20,20,20,.85);
+  --border:rgba(255,120,0,.25);
+  --ring:rgba(255,120,0,.35);
+  --btn1:#ff7a00;
+  --btn2:#ff3c00;
+}
 
-    body{
-      margin:0;
-      min-height:100vh;
-      display:grid;
-      place-items:center;
-      color:var(--text);
-      font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial, "Noto Sans", "Helvetica Neue", sans-serif;
+*{
+  box-sizing:border-box;
+}
 
-      /* Şirket arka plan resmi + karartma */
-      background:
-        linear-gradient(rgba(0,0,0,.65), rgba(0,0,0,.65)),
-        url("{{ url_for('static', filename='images/company-bg.png') }}") center/cover no-repeat fixed;
-    }
+body{
+  margin:0;
+  min-height:100vh;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  font-family:Segoe UI, sans-serif;
+  color:var(--text);
 
-    .wrap{
-      width:min(440px, 92vw);
-      padding:22px;
-    }
+  background:
+    linear-gradient(rgba(0,0,0,.65), rgba(0,0,0,.65)),
+    url("{{ url_for('static', filename='images/company-bg.jpg') }}")
+    center/cover no-repeat;
+}
 
-    /* Üst marka alanı */
-    .brand{
-      display:flex;
-      align-items:center;
-      gap:12px;
-      margin-bottom:14px;
-    }
-    .logo{
-      width:44px;height:44px;border-radius:14px;
-      background: linear-gradient(135deg, rgba(37,99,235,1), rgba(16,185,129,1));
-      box-shadow: 0 14px 40px rgba(0,0,0,.35);
-      flex:0 0 auto;
-    }
-    .brand h1{
-      font-size:18px;
-      margin:0;
-      letter-spacing:.2px;
-    }
-    .brand p{
-      margin:2px 0 0 0;
-      color:var(--muted);
-      font-size:13px;
-    }
+/* Konteyner */
+.container{
+  width:400px;
+  max-width:92%;
+}
 
-    /* Cam efektli kart */
-    .card{
-      background: var(--card);
-      border:1px solid var(--border);
-      border-radius: 18px;
-      padding: 22px;
-      box-shadow: 0 20px 60px rgba(0,0,0,.45);
-      backdrop-filter: blur(8px);
-      -webkit-backdrop-filter: blur(8px);
-    }
+/* Üst marka alanı */
+.brand{
+  display:flex;
+  align-items:center;
+  gap:14px;
+  margin-bottom:22px;
+}
 
-    .title{
-      margin:0 0 6px 0;
-      font-size:18px;
-    }
-    .subtitle{
-      margin:0 0 14px 0;
-      color:var(--muted);
-      font-size:13px;
-      line-height:1.45;
-    }
+.logo{
+  width:50px;
+  height:50px;
+  border-radius:14px;
+  background:linear-gradient(135deg,#ff7a00,#ff3c00);
+  box-shadow:0 12px 35px rgba(255,120,0,.4);
+}
 
-    label{
-      display:block;
-      margin: 10px 0 6px 0;
-      font-size: 12px;
-      color: var(--muted);
-    }
+.brand-text h1{
+  margin:0;
+  font-size:20px;
+}
 
-    .input{
-      width:100%;
-      padding: 11px 12px;
-      border-radius: 12px;
-      border:1px solid var(--border);
-      background: rgba(2,6,23,.35);
-      color: var(--text);
-      outline: none;
-    }
-    .input:focus{
-      border-color: rgba(37,99,235,.55);
-      box-shadow: 0 0 0 4px var(--ring);
-    }
+.brand-text p{
+  margin:4px 0 0 0;
+  font-size:13px;
+  color:var(--muted);
+}
 
-    .hint{
-      margin-top:10px;
-      font-size:12px;
-      color: var(--muted);
-    }
+/* Kart */
+.card{
+  background:var(--card);
+  border:1px solid var(--border);
+  border-radius:18px;
+  padding:28px;
+  box-shadow:
+      0 0 45px rgba(255,120,0,.25),
+      0 25px 70px rgba(0,0,0,.7);
+  backdrop-filter:blur(10px);
+}
 
-    .btn{
-      width:100%;
-      margin-top: 14px;
-      padding: 11px 12px;
-      border:none;
-      border-radius: 12px;
-      background: linear-gradient(135deg, var(--btn1), var(--btn2));
-      color:white;
-      font-weight: 700;
-      cursor:pointer;
-      box-shadow: 0 14px 40px rgba(37,99,235,.25);
-    }
-    .btn:active{ transform: translateY(1px); }
+.card h2{
+  margin-top:0;
+  margin-bottom:10px;
+}
 
-    .footer{
-      margin-top: 12px;
-      text-align:center;
-      color: rgba(148,163,184,.95);
-      font-size: 12px;
-    }
-  </style>
+.subtitle{
+  font-size:14px;
+  color:var(--muted);
+  margin-bottom:20px;
+}
+
+label{
+  display:block;
+  font-size:13px;
+  margin:12px 0 6px 0;
+}
+
+input{
+  width:100%;
+  padding:12px;
+  border-radius:12px;
+  border:1px solid var(--border);
+  background:rgba(0,0,0,.35);
+  color:var(--text);
+  outline:none;
+  transition:.2s;
+}
+
+input:focus{
+  border-color:#ff7a00;
+  box-shadow:0 0 0 3px var(--ring);
+}
+
+/* Buton */
+button{
+  width:100%;
+  margin-top:18px;
+  padding:13px;
+  border:none;
+  border-radius:12px;
+  background:linear-gradient(135deg,var(--btn1),var(--btn2));
+  color:white;
+  font-weight:700;
+  cursor:pointer;
+  transition:.2s;
+  box-shadow:0 10px 30px rgba(255,100,0,.35);
+}
+
+button:hover{
+  transform:translateY(-2px);
+  box-shadow:0 15px 40px rgba(255,100,0,.45);
+}
+
+.footer{
+  margin-top:16px;
+  text-align:center;
+  font-size:12px;
+  color:#bdbdbd;
+}
+</style>
 </head>
 
 <body>
-  <div class="wrap">
-    <div class="brand">
-      <div class="logo" aria-hidden="true"></div>
-      <div>
-        <h1>CNC Verim Sistemi</h1>
-        <p>Operatör ve Admin giriş ekranı</p>
-      </div>
+
+<div class="container">
+
+  <div class="brand">
+    <div class="logo"></div>
+    <div class="brand-text">
+      <h1>CNC Verim Sistemi</h1>
+      <p>Operatör ve Admin giriş ekranı</p>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>Giriş</h2>
+    <div class="subtitle">
+      Kullanıcı adın ve şifrenle giriş yap. Yetkine göre panel açılır.
     </div>
 
-    <div class="card">
-      <h2 class="title">Giriş</h2>
-      <p class="subtitle">Kullanıcı adın ve şifrenle giriş yap. Yetkine göre panel otomatik açılır.</p>
+    <form method="post" action="/login">
+      <label>Kullanıcı adı</label>
+      <input type="text" name="username" placeholder="örn: operator1" required>
 
-      <!-- app.py ile uyumlu: username / password -->
-      <form method="post" action="/login" autocomplete="on">
-        <label for="username">Kullanıcı adı</label>
-        <input class="input" id="username" name="username" type="text" placeholder="örn: operator1" required />
+      <label>Şifre</label>
+      <input type="password" name="password" placeholder="••••••••" required>
 
-        <label for="password">Şifre</label>
-        <input class="input" id="password" name="password" type="password" placeholder="••••••••" required />
-
-        <div class="hint">Güvenlik için şifreni kimseyle paylaşma.</div>
-
-        <button class="btn" type="submit">Giriş Yap</button>
-      </form>
-    </div>
+      <button type="submit">Giriş Yap</button>
+    </form>
 
     <div class="footer">© CNC Verim</div>
   </div>
+
+</div>
+
 </body>
 </html>
