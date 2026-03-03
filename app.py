@@ -1,9 +1,11 @@
 import os
+import sqlite3
 from datetime import datetime, timedelta
+
 from flask import Flask, render_template, request, redirect, session
 from flask_sqlalchemy import SQLAlchemy
 from werkzeug.security import generate_password_hash, check_password_hash
-from sqlalchemy import func
+from sqlalchemy import func, text
 
 app = Flask(__name__)
 
@@ -43,7 +45,6 @@ class Part(db.Model):
     part_code = db.Column(db.String(200), nullable=False)
     operation = db.Column(db.String(20), nullable=False)
     setup_time = db.Column(db.Integer, nullable=False)  # saniye (parça başına)
-
     __table_args__ = (
         db.UniqueConstraint("part_code", "operation", name="uq_part_operation"),
     )
@@ -52,7 +53,9 @@ class Work(db.Model):
     id = db.Column(db.Integer, primary_key=True)
 
     operator = db.Column(db.String(50), nullable=False)
-    cnc = db.Column(db.String(20), nullable=False, default="CNC1")  # ✅ YENİ
+
+    # ✅ CNC kolonu (DB'de yoksa aşağıdaki ensure_db_and_admin otomatik ekler)
+    cnc = db.Column(db.String(20), nullable=False, default="CNC1")
 
     part_code = db.Column(db.String(200), nullable=False)
     operation = db.Column(db.String(20), nullable=False)
@@ -208,8 +211,8 @@ def operator_panel():
                 operation=operation,
                 start_time=start_time,
                 end_time=end_time,
-                process_time_sec=process_sec,  # girerse kaydediyoruz
-                quantity=quantity,            # girerse kaydediyoruz
+                process_time_sec=process_sec,
+                quantity=quantity,
                 downtime_reason=downtime_reason if downtime_reason else None,
                 downtime_seconds=downtime_seconds,
                 efficiency=0.0
@@ -258,7 +261,6 @@ def operator_panel():
             downtime_seconds=downtime_seconds,
             efficiency=efficiency
         )
-
         db.session.add(new_work)
         db.session.commit()
 
@@ -474,27 +476,66 @@ def admin_delete_break(break_id):
     db.session.commit()
     return redirect("/admin")
 
-# ================= INIT =================
+# ================= INIT + AUTO MIGRATION =================
+def ensure_cnc_column_if_missing():
+    """
+    YOL 2: DB'de cnc kolonu yoksa otomatik ekle.
+    - Postgres: ALTER TABLE ... IF NOT EXISTS
+    - SQLite: ALTER TABLE ... (hata yakala)
+    """
+    uri = app.config["SQLALCHEMY_DATABASE_URI"]
+
+    # Postgres
+    if uri.startswith("postgresql"):
+        db.session.execute(
+            text("ALTER TABLE work ADD COLUMN IF NOT EXISTS cnc VARCHAR(20) NOT NULL DEFAULT 'CNC1';")
+        )
+        db.session.commit()
+        return
+
+    # SQLite (lokal)
+    if uri.startswith("sqlite"):
+        # SQLAlchemy uri: sqlite:///instance/verim.db
+        # dosya yolunu bulalım:
+        path = uri.replace("sqlite:///", "", 1)
+        try:
+            con = sqlite3.connect(path)
+            cur = con.cursor()
+            cur.execute("ALTER TABLE work ADD COLUMN cnc TEXT NOT NULL DEFAULT 'CNC1'")
+            con.commit()
+            con.close()
+        except Exception:
+            # Kolon zaten varsa hata verir, sorun değil
+            pass
+
 def ensure_db_and_admin():
     with app.app_context():
+        # tabloları oluştur
         db.create_all()
 
+        # ✅ cnc kolonunu yoksa ekle (auto migrate)
+        try:
+            ensure_cnc_column_if_missing()
+        except Exception:
+            # DB ilk anda hazır olmayabilir; yine de app'i düşürmeyelim
+            pass
+
+        # Güvenlik: env ile admin oluştur
         create_admin = (os.environ.get("ADMIN_CREATE", "false").lower() == "true")
         admin_username = os.environ.get("ADMIN_USERNAME", "admin")
         admin_password = os.environ.get("ADMIN_PASSWORD")
 
         if create_admin:
-            if not admin_password or len(admin_password) < 6:
-                return
-            if not User.query.filter_by(username=admin_username).first():
-                db.session.add(
-                    User(
-                        username=admin_username,
-                        password_hash=generate_password_hash(admin_password),
-                        role="admin",
+            if admin_password and len(admin_password) >= 6:
+                if not User.query.filter_by(username=admin_username).first():
+                    db.session.add(
+                        User(
+                            username=admin_username,
+                            password_hash=generate_password_hash(admin_password),
+                            role="admin",
+                        )
                     )
-                )
-                db.session.commit()
+                    db.session.commit()
 
         # İlk çalıştırmada mola yoksa örnek ekle
         if BreakTime.query.count() == 0:
