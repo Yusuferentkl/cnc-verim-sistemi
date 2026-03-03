@@ -13,7 +13,7 @@ app.secret_key = os.environ.get("SECRET_KEY", "local_dev_secret_key_change_me")
 app.config["SESSION_COOKIE_HTTPONLY"] = True
 app.config["SESSION_COOKIE_SAMESITE"] = "Lax"
 if os.environ.get("RENDER") or os.environ.get("FLASK_ENV") == "production":
-    app.config["SESSION_COOKIE_SECURE"] = True  # HTTPS üstünden çalışır
+    app.config["SESSION_COOKIE_SECURE"] = True
 
 # ================== DATABASE (Render Postgres / Local SQLite) ==================
 db_url = os.environ.get("DATABASE_URL")
@@ -25,7 +25,6 @@ else:
     app.config["SQLALCHEMY_DATABASE_URI"] = "sqlite:///instance/verim.db"
 
 app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
-
 db = SQLAlchemy(app)
 
 # ================= SABİT SEÇENEKLER =================
@@ -40,9 +39,9 @@ class User(db.Model):
 
 class Part(db.Model):
     id = db.Column(db.Integer, primary_key=True)
-    part_code = db.Column(db.String(200), nullable=False)   # Parça adı uzun olabilir
-    operation = db.Column(db.String(20), nullable=False)    # 4 seçenek
-    setup_time = db.Column(db.Integer, nullable=False)      # saniye (parça başına)
+    part_code = db.Column(db.String(200), nullable=False)
+    operation = db.Column(db.String(20), nullable=False)
+    setup_time = db.Column(db.Integer, nullable=False)  # saniye (parça başına)
 
     __table_args__ = (
         db.UniqueConstraint("part_code", "operation", name="uq_part_operation"),
@@ -66,7 +65,6 @@ class Work(db.Model):
     efficiency = db.Column(db.Float, nullable=False)
     date = db.Column(db.DateTime, default=datetime.now)
 
-# ✅ Yeni: Mola tablosu
 class BreakTime(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     start_time = db.Column(db.String(5), nullable=False)  # HH:MM
@@ -76,9 +74,13 @@ class BreakTime(db.Model):
 def parse_time_hhmm(t: str) -> datetime:
     return datetime.strptime(t, "%H:%M")
 
+def get_breaks():
+    rows = BreakTime.query.order_by(BreakTime.start_time.asc()).all()
+    return [(r.start_time, r.end_time) for r in rows]
+
 def calculate_net_seconds(start_str: str, end_str: str) -> int:
     """
-    Net süre (sn) = (end-start) - mola çakışmaları (DB'den okunur)
+    Net süre (sn) = (end-start) - mola çakışmaları
     """
     start = parse_time_hhmm(start_str)
     end = parse_time_hhmm(end_str)
@@ -88,12 +90,9 @@ def calculate_net_seconds(start_str: str, end_str: str) -> int:
         return 0
 
     break_seconds = 0
-
-    # ✅ Molaları veritabanından çek
-    breaks = BreakTime.query.all()
-    for br in breaks:
-        bs = parse_time_hhmm(br.start_time)
-        be = parse_time_hhmm(br.end_time)
+    for b_start, b_end in get_breaks():
+        bs = parse_time_hhmm(b_start)
+        be = parse_time_hhmm(b_end)
 
         overlap_start = max(start, bs)
         overlap_end = min(end, be)
@@ -119,7 +118,6 @@ def calculate_efficiency_seconds(
     Verim% = (GerçekAdet / HedefAdet) * 100
     """
     net_seconds = calculate_net_seconds(start_time, end_time) - max(int(downtime_seconds or 0), 0)
-
     if net_seconds <= 0:
         return 0.0
 
@@ -179,15 +177,10 @@ def operator_panel():
     part_codes = get_part_codes()
 
     if request.method == "POST":
-        part_code = request.form["part_code"].strip()
-        operation = request.form["operation"].strip()
-        start_time = request.form["start_time"]
-        end_time = request.form["end_time"]
-        quantity = int(request.form["quantity"])
-
-        process_min = int(request.form["process_min"])
-        process_sec_part = int(request.form["process_sec_part"])
-        process_sec = process_min * 60 + process_sec_part
+        part_code = request.form.get("part_code", "").strip()
+        operation = request.form.get("operation", "").strip()
+        start_time = request.form.get("start_time", "")
+        end_time = request.form.get("end_time", "")
 
         downtime_reason = request.form.get("downtime_reason", "").strip()
         downtime_min = int(request.form.get("downtime_min", "0") or 0)
@@ -201,6 +194,37 @@ def operator_panel():
                 part_codes=part_codes,
                 message="Seçenek geçersiz!"
             )
+
+        # ✅ AYAR: sadece süre kaydı, verim yok, parça tanımı şart değil
+        if operation == "Ayar":
+            new_work = Work(
+                operator=session["user"],
+                part_code=part_code if part_code else "AYAR",
+                operation=operation,
+                start_time=start_time,
+                end_time=end_time,
+                process_time_sec=0,
+                quantity=0,
+                downtime_reason=downtime_reason if downtime_reason else None,
+                downtime_seconds=downtime_seconds,
+                efficiency=0.0
+            )
+            db.session.add(new_work)
+            db.session.commit()
+
+            return render_template(
+                "operator.html",
+                operations=OPERATIONS,
+                part_codes=part_codes,
+                message="Ayar kaydı alınmıştır."
+            )
+
+        # Diğer operasyonlar
+        quantity = int(request.form.get("quantity", "0") or 0)
+
+        process_min = int(request.form.get("process_min", "0") or 0)
+        process_sec_part = int(request.form.get("process_sec_part", "0") or 0)
+        process_sec = process_min * 60 + process_sec_part
 
         part = Part.query.filter_by(part_code=part_code, operation=operation).first()
         if not part:
@@ -255,8 +279,25 @@ def admin():
     if request.method == "POST":
         action = request.form.get("action", "")
 
-        # Kullanıcı ekle
-        if action == "add_user":
+        # ✅ mola ekle
+        if action == "add_break":
+            bs = request.form.get("break_start", "").strip()
+            be = request.form.get("break_end", "").strip()
+            if not bs or not be:
+                message = "Mola saatleri hatalı!"
+            elif bs >= be:
+                message = "Mola bitiş saati başlangıçtan büyük olmalı!"
+            else:
+                exists = BreakTime.query.filter_by(start_time=bs, end_time=be).first()
+                if exists:
+                    message = "Bu mola zaten var!"
+                else:
+                    db.session.add(BreakTime(start_time=bs, end_time=be))
+                    db.session.commit()
+                    message = "Mola eklendi ✅"
+
+        # kullanıcı ekle
+        elif action == "add_user":
             username = request.form["username"].strip()
             password = request.form["password"].strip()
             role = request.form["role"].strip()
@@ -271,13 +312,13 @@ def admin():
                 db.session.commit()
                 message = "Kullanıcı eklendi ✅"
 
-        # Parça upsert
+        # parça ekle/güncelle
         elif action == "upsert_part":
             part_code = request.form["part_code"].strip()
             operation = request.form["operation"].strip()
 
-            setup_min = int(request.form["setup_min"])
-            setup_sec_part = int(request.form["setup_sec_part"])
+            setup_min = int(request.form.get("setup_min", "0") or 0)
+            setup_sec_part = int(request.form.get("setup_sec_part", "0") or 0)
             setup_seconds = setup_min * 60 + setup_sec_part
 
             if not part_code or operation not in OPERATIONS:
@@ -291,7 +332,7 @@ def admin():
                 db.session.commit()
                 message = "Parça kaydedildi ✅"
 
-        # Excel import
+        # excel import
         elif action == "import_excel":
             file = request.files.get("excel_file")
             if not file or file.filename == "":
@@ -335,7 +376,6 @@ def admin():
 
                         for excel_col, system_op in operation_map.items():
                             cell_value = ws.cell(row=row, column=headers[excel_col]).value
-
                             if cell_value is None or cell_value == "":
                                 continue
 
@@ -363,21 +403,7 @@ def admin():
                     if not message:
                         message = f"Excel yükleme hatası: {e}"
 
-        # ✅ Mola ekle
-        elif action == "add_break":
-            b_start = request.form["break_start"].strip()
-            b_end = request.form["break_end"].strip()
-
-            if not b_start or not b_end:
-                message = "Mola saatleri boş olamaz!"
-            elif b_start >= b_end:
-                message = "Mola bitişi başlangıçtan büyük olmalı!"
-            else:
-                db.session.add(BreakTime(start_time=b_start, end_time=b_end))
-                db.session.commit()
-                message = "Mola eklendi ✅"
-
-    # Haftalık sıralama (son 7 gün)
+    # Haftalık sıralama (son 7 gün) - ✅ AYAR hariç
     week_start = datetime.now() - timedelta(days=7)
     weekly_rows = (
         db.session.query(
@@ -386,6 +412,7 @@ def admin():
             func.count(Work.id).label("cnt")
         )
         .filter(Work.date >= week_start)
+        .filter(Work.operation != "Ayar")
         .group_by(Work.operator)
         .order_by(func.avg(Work.efficiency).desc())
         .all()
@@ -398,8 +425,6 @@ def admin():
 
     users = User.query.order_by(User.role.asc(), User.username.asc()).all()
     works = Work.query.order_by(Work.date.desc()).limit(200).all()
-
-    # ✅ Molaları admin ekranına gönder
     breaks = BreakTime.query.order_by(BreakTime.start_time.asc()).all()
 
     return render_template(
@@ -436,7 +461,6 @@ def admin_delete_work(work_id):
     db.session.commit()
     return redirect("/admin")
 
-# ✅ Mola sil
 @app.route("/admin/delete_break/<int:break_id>", methods=["POST"])
 def admin_delete_break(break_id):
     if session.get("role") != "admin":
@@ -447,7 +471,7 @@ def admin_delete_break(break_id):
     db.session.commit()
     return redirect("/admin")
 
-# ================= INIT (Render + Gunicorn ile de çalışır) =================
+# ================= INIT =================
 def ensure_db_and_admin():
     with app.app_context():
         db.create_all()
@@ -459,7 +483,6 @@ def ensure_db_and_admin():
         if create_admin:
             if not admin_password or len(admin_password) < 6:
                 return
-
             if not User.query.filter_by(username=admin_username).first():
                 db.session.add(
                     User(
@@ -469,6 +492,13 @@ def ensure_db_and_admin():
                     )
                 )
                 db.session.commit()
+
+        # İlk çalıştırmada hiç mola yoksa örnek molaları ekle (isteğe bağlı)
+        if BreakTime.query.count() == 0:
+            db.session.add(BreakTime(start_time="09:45", end_time="10:00"))
+            db.session.add(BreakTime(start_time="12:30", end_time="13:00"))
+            db.session.add(BreakTime(start_time="15:45", end_time="16:00"))
+            db.session.commit()
 
 ensure_db_and_admin()
 
