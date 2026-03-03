@@ -79,13 +79,13 @@ button{
     <div class="grid">
       <div>
         <label>Parça (yaz / seç)</label>
-        <input list="part_list" name="part_code" placeholder="Parça yaz veya seç..." />
+        <input list="part_list" name="part_code" placeholder="Parça yaz veya seç...">
         <datalist id="part_list">
           {% for p in part_codes %}
             <option value="{{ p }}">
           {% endfor %}
         </datalist>
-        <div class="small">Ayar için istersen boş da bırakabilirsin.</div>
+        <div class="small">Ayar için istersen boş bırakabilirsin. (Boşsa sistem “AYAR” diye kaydeder.)</div>
       </div>
 
       <div>
@@ -95,6 +95,7 @@ button{
             <option value="{{ op }}">{{ op }}</option>
           {% endfor %}
         </select>
+        <div class="small">Not: “Ayar” kayıtları verim ortalamasına dahil edilmez.</div>
       </div>
 
       <div>
@@ -120,7 +121,7 @@ button{
       <div>
         <label>Açıklama</label>
         <input type="text" value="İşleme süresi (parça başına)" disabled>
-        <div class="small">Ayar seçilirse devre dışı kalır.</div>
+        <div class="small">Ayar için istersen 0 bırakabilirsin.</div>
       </div>
       <div>
         <label>Dakika</label>
@@ -162,29 +163,6 @@ button{
     <div class="small">Not: Operatör panelinde verim yüzdesi gösterilmez.</div>
   </form>
 </div>
-
-<script>
-  const opSel = document.querySelector('select[name="operation"]');
-  const qty = document.querySelector('input[name="quantity"]');
-  const pMin = document.querySelector('input[name="process_min"]');
-  const pSec = document.querySelector('input[name="process_sec_part"]');
-
-  function toggleForAyar(){
-    const isAyar = opSel.value === "Ayar";
-
-    // Ayar'da bunlar zorunlu olmasın ve kilitlensin
-    [qty, pMin, pSec].forEach(el => {
-      if(!el) return;
-      el.required = !isAyar;
-      el.disabled = isAyar;
-      if(isAyar) el.value = 0;
-      if(!isAyar && el.name === "quantity" && (el.value === "")) el.value = 0;
-    });
-  }
-
-  opSel.addEventListener("change", toggleForAyar);
-  window.addEventListener("load", toggleForAyar);
-</script>
 
 </body>
 </html>

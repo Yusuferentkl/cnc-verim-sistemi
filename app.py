@@ -79,9 +79,6 @@ def get_breaks():
     return [(r.start_time, r.end_time) for r in rows]
 
 def calculate_net_seconds(start_str: str, end_str: str) -> int:
-    """
-    Net süre (sn) = (end-start) - mola çakışmaları
-    """
     start = parse_time_hhmm(start_str)
     end = parse_time_hhmm(end_str)
 
@@ -100,8 +97,7 @@ def calculate_net_seconds(start_str: str, end_str: str) -> int:
         if overlap_start < overlap_end:
             break_seconds += int((overlap_end - overlap_start).total_seconds())
 
-    net = total_seconds - break_seconds
-    return max(net, 0)
+    return max(total_seconds - break_seconds, 0)
 
 def calculate_efficiency_seconds(
     start_time: str,
@@ -111,12 +107,6 @@ def calculate_efficiency_seconds(
     quantity: int,
     downtime_seconds: int
 ) -> float:
-    """
-    NetSüre = (Bitiş-Başlangıç) - Molalar - KayıpZaman
-    StandartParçaSüresi = process + setup (parça başına)
-    HedefAdet = NetSüre / StandartParçaSüresi
-    Verim% = (GerçekAdet / HedefAdet) * 100
-    """
     net_seconds = calculate_net_seconds(start_time, end_time) - max(int(downtime_seconds or 0), 0)
     if net_seconds <= 0:
         return 0.0
@@ -182,6 +172,12 @@ def operator_panel():
         start_time = request.form.get("start_time", "")
         end_time = request.form.get("end_time", "")
 
+        # Form alanları kapanmayacak; kullanıcı ne girdiyse alıyoruz
+        quantity = int(request.form.get("quantity", "0") or 0)
+        process_min = int(request.form.get("process_min", "0") or 0)
+        process_sec_part = int(request.form.get("process_sec_part", "0") or 0)
+        process_sec = process_min * 60 + process_sec_part
+
         downtime_reason = request.form.get("downtime_reason", "").strip()
         downtime_min = int(request.form.get("downtime_min", "0") or 0)
         downtime_sec_part = int(request.form.get("downtime_sec_part", "0") or 0)
@@ -195,7 +191,9 @@ def operator_panel():
                 message="Seçenek geçersiz!"
             )
 
-        # ✅ AYAR: sadece süre kaydı, verim yok, parça tanımı şart değil
+        # ✅ AYAR: Sadece bilgi kaydı.
+        # - Part tablosunda tanımlı olma zorunluluğu yok
+        # - Verim hesaplanmaz (0.0)
         if operation == "Ayar":
             new_work = Work(
                 operator=session["user"],
@@ -203,8 +201,8 @@ def operator_panel():
                 operation=operation,
                 start_time=start_time,
                 end_time=end_time,
-                process_time_sec=0,
-                quantity=0,
+                process_time_sec=process_sec,     # girerse kaydediyoruz (ister 0)
+                quantity=quantity,               # girerse kaydediyoruz (ister 0)
                 downtime_reason=downtime_reason if downtime_reason else None,
                 downtime_seconds=downtime_seconds,
                 efficiency=0.0
@@ -216,16 +214,10 @@ def operator_panel():
                 "operator.html",
                 operations=OPERATIONS,
                 part_codes=part_codes,
-                message="Ayar kaydı alınmıştır."
+                message="Ayar kaydı alınmıştır (verime dahil edilmez)."
             )
 
-        # Diğer operasyonlar
-        quantity = int(request.form.get("quantity", "0") or 0)
-
-        process_min = int(request.form.get("process_min", "0") or 0)
-        process_sec_part = int(request.form.get("process_sec_part", "0") or 0)
-        process_sec = process_min * 60 + process_sec_part
-
+        # ✅ Diğer operasyonlar: Part tanımı şart + verim hesaplanır
         part = Part.query.filter_by(part_code=part_code, operation=operation).first()
         if not part:
             return render_template(
@@ -256,7 +248,6 @@ def operator_panel():
             downtime_seconds=downtime_seconds,
             efficiency=efficiency
         )
-
         db.session.add(new_work)
         db.session.commit()
 
@@ -279,7 +270,7 @@ def admin():
     if request.method == "POST":
         action = request.form.get("action", "")
 
-        # ✅ mola ekle
+        # mola ekle
         if action == "add_break":
             bs = request.form.get("break_start", "").strip()
             be = request.form.get("break_end", "").strip()
@@ -493,7 +484,7 @@ def ensure_db_and_admin():
                 )
                 db.session.commit()
 
-        # İlk çalıştırmada hiç mola yoksa örnek molaları ekle (isteğe bağlı)
+        # İlk çalıştırmada hiç mola yoksa örnek molaları ekle
         if BreakTime.query.count() == 0:
             db.session.add(BreakTime(start_time="09:45", end_time="10:00"))
             db.session.add(BreakTime(start_time="12:30", end_time="13:00"))
