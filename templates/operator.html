@@ -18,23 +18,10 @@
 }
 *{ box-sizing:border-box; }
 
-body{
-  margin:0;
-  background:var(--bg);
-  color:var(--text);
-  font-family:Segoe UI, sans-serif;
-  padding:20px;
-}
-
+body{ margin:0; background:var(--bg); color:var(--text); font-family:Segoe UI, sans-serif; padding:20px; }
 a{ color:#ffb26a; text-decoration:none; }
 
-.top{
-  display:flex;
-  justify-content:space-between;
-  align-items:center;
-  margin-bottom:20px;
-  flex-wrap:wrap;
-}
+.top{ display:flex; justify-content:space-between; align-items:center; margin-bottom:20px; flex-wrap:wrap; }
 
 .card{
   background:var(--card);
@@ -52,12 +39,7 @@ a{ color:#ffb26a; text-decoration:none; }
   background:rgba(255,120,0,.08);
 }
 
-label{
-  display:block;
-  font-size:13px;
-  color:var(--muted);
-  margin:12px 0 6px;
-}
+label{ display:block; font-size:13px; color:var(--muted); margin:12px 0 6px; }
 
 input, select{
   width:100%;
@@ -69,29 +51,13 @@ input, select{
   outline:none;
 }
 
-input:focus, select:focus{
-  box-shadow:0 0 0 3px var(--ring);
-}
+input:focus, select:focus{ box-shadow:0 0 0 3px var(--ring); }
 
-.grid{
-  display:grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap:15px;
-}
+.grid{ display:grid; grid-template-columns: repeat(2, 1fr); gap:15px; }
+@media(max-width:768px){ .grid{ grid-template-columns:1fr; } }
 
-@media(max-width:768px){
-  .grid{ grid-template-columns:1fr; }
-}
-
-.row3{
-  display:grid;
-  grid-template-columns: 2fr 1fr 1fr;
-  gap:15px;
-}
-
-@media(max-width:768px){
-  .row3{ grid-template-columns:1fr; }
-}
+.row3{ display:grid; grid-template-columns: 2fr 1fr 1fr; gap:15px; }
+@media(max-width:768px){ .row3{ grid-template-columns:1fr; } }
 
 button{
   width:100%;
@@ -105,24 +71,14 @@ button{
   cursor:pointer;
   box-shadow:0 10px 30px rgba(255,100,0,.25);
 }
-
 button:hover{ opacity:.95; }
 
-.small{
-  font-size:12px;
-  color:var(--muted);
-  margin-top:5px;
-}
-
-hr{
-  border-color:rgba(255,120,0,.2);
-  margin:25px 0;
-}
+.small{ font-size:12px; color:var(--muted); margin-top:5px; }
+hr{ border-color:rgba(255,120,0,.2); margin:25px 0; }
 </style>
 </head>
 
 <body>
-
 <div class="top">
   <h2>Operatör Paneli</h2>
   <a href="/logout">Çıkış Yap</a>
@@ -133,110 +89,106 @@ hr{
 {% endif %}
 
 <div class="card">
-
 <form method="post">
 
-<div class="grid">
+  <div class="grid">
+    <!-- CNC -->
+    <div>
+      <label>CNC</label>
+      <select name="cnc" required>
+        {% for c in cnc_list %}
+          <option value="{{ c }}">{{ c }}</option>
+        {% endfor %}
+      </select>
+    </div>
 
-  <!-- PARÇA -->
-  <div>
-    <label>Parça</label>
-    <input list="part_list" name="part_code" placeholder="Parça yaz veya seç...">
-    <datalist id="part_list">
-      {% for p in part_codes %}
-        <option value="{{ p }}">
-      {% endfor %}
-    </datalist>
-    <div class="small">Ayar için boş bırakabilirsin.</div>
+    <!-- OPERASYON -->
+    <div>
+      <label>Operasyon</label>
+      <select name="operation" required>
+        {% for op in operations %}
+          <option value="{{ op }}">{{ op }}</option>
+        {% endfor %}
+      </select>
+      <div class="small">Ayar kayıtları verime dahil edilmez.</div>
+    </div>
+
+    <!-- PARÇA -->
+    <div>
+      <label>Parça</label>
+      <input list="part_list" name="part_code" placeholder="Parça yaz veya seç...">
+      <datalist id="part_list">
+        {% for p in part_codes %}
+          <option value="{{ p }}">
+        {% endfor %}
+      </datalist>
+      <div class="small">Ayar için boş bırakabilirsin.</div>
+    </div>
+
+    <div>
+      <label>Başlangıç</label>
+      <input type="time" name="start_time" required>
+    </div>
+
+    <div>
+      <label>Bitiş</label>
+      <input type="time" name="end_time" required>
+    </div>
+
+    <div>
+      <label>Üretilen Adet</label>
+      <input type="number" name="quantity" min="0" value="0" required>
+    </div>
   </div>
 
-  <!-- OPERASYON -->
-  <div>
-    <label>Operasyon</label>
-    <select name="operation" required>
-      {% for op in operations %}
-        <option value="{{ op }}">{{ op }}</option>
-      {% endfor %}
-    </select>
-    <div class="small">Ayar kayıtları verime dahil edilmez.</div>
-  </div>
+  <hr>
 
-  <!-- BAŞLANGIÇ -->
-  <div>
-    <label>Başlangıç</label>
-    <input type="time" name="start_time" required>
-  </div>
-
-  <!-- BİTİŞ -->
-  <div>
-    <label>Bitiş</label>
-    <input type="time" name="end_time" required>
-  </div>
-
-  <!-- ADET -->
-  <div>
-    <label>Üretilen Adet</label>
-    <input type="number" name="quantity" min="0" value="0" required>
-  </div>
-
-</div>
-
-<hr>
-
-<h3>Parça Başına İşleme Süresi</h3>
-
-<div class="row3">
-  <div>
-    <label>Açıklama</label>
-    <input type="text" value="İşleme süresi (parça başına)" disabled>
-    <div class="small">Ayar için 0 bırakabilirsin.</div>
-  </div>
-
-  <div>
-    <label>Dakika</label>
-    <input type="number" name="process_min" min="0" value="0" required>
-  </div>
-
-  <div>
-    <label>Saniye</label>
-    <input type="number" name="process_sec_part" min="0" max="59" value="0" required>
-  </div>
-</div>
-
-<hr>
-
-<h3>Kayıp Zaman</h3>
-
-<div class="grid">
-  <div>
-    <label>Kayıp Nedeni</label>
-    <input type="text" name="downtime_reason" placeholder="Örn: takım kırıldı, arıza, bekleme...">
-  </div>
-
-  <div class="row3" style="grid-column: 1 / -1;">
+  <h3>Parça Başına İşleme Süresi</h3>
+  <div class="row3">
     <div>
       <label>Açıklama</label>
-      <input type="text" value="Kayıp süre (toplam)" disabled>
+      <input type="text" value="İşleme süresi (parça başına)" disabled>
+      <div class="small">Ayar için 0 bırakabilirsin.</div>
     </div>
-
     <div>
       <label>Dakika</label>
-      <input type="number" name="downtime_min" min="0" value="0">
+      <input type="number" name="process_min" min="0" value="0" required>
     </div>
-
     <div>
       <label>Saniye</label>
-      <input type="number" name="downtime_sec_part" min="0" max="59" value="0">
+      <input type="number" name="process_sec_part" min="0" max="59" value="0" required>
     </div>
   </div>
-</div>
 
-<button type="submit">Kaydı Gönder</button>
+  <hr>
 
+  <h3>Kayıp Zaman</h3>
+  <div class="grid">
+    <div>
+      <label>Kayıp Nedeni</label>
+      <input type="text" name="downtime_reason" placeholder="Örn: takım kırıldı, arıza, bekleme...">
+    </div>
+
+    <div class="row3" style="grid-column: 1 / -1;">
+      <div>
+        <label>Açıklama</label>
+        <input type="text" value="Kayıp süre (toplam)" disabled>
+      </div>
+      <div>
+        <label>Dakika</label>
+        <input type="number" name="downtime_min" min="0" value="0">
+      </div>
+      <div>
+        <label>Saniye</label>
+        <input type="number" name="downtime_sec_part" min="0" max="59" value="0">
+      </div>
+    </div>
+  </div>
+
+  <button type="submit">Kaydı Gönder</button>
 </form>
 </div>
 
-<!-- 0 TIKLANINCA SİLİNİR SCRIPT -->
 <script>
 const zeroFields = [
   'quantity',
@@ -247,12 +199,9 @@ const zeroFields = [
 ];
 
 function attachZeroBehavior(input) {
-  if (!input) return;
-
   input.addEventListener('focus', () => {
     if (input.value === '0') input.value = '';
   });
-
   input.addEventListener('blur', () => {
     if (input.value.trim() === '') input.value = '0';
   });
@@ -260,13 +209,11 @@ function attachZeroBehavior(input) {
 
 window.addEventListener('load', () => {
   zeroFields.forEach(name => {
-    document.querySelectorAll(`input[name="${name}"]`)
-      .forEach(attachZeroBehavior);
+    document.querySelectorAll(`input[name="${name}"]`).forEach(attachZeroBehavior);
   });
 
-  // Mouse wheel ile sayı değişmesin
   document.querySelectorAll('input[type="number"]').forEach(inp => {
-    inp.addEventListener('wheel', (e) => inp.blur(), { passive: true });
+    inp.addEventListener('wheel', () => inp.blur(), { passive: true });
   });
 });
 </script>

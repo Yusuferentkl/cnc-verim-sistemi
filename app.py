@@ -29,6 +29,7 @@ db = SQLAlchemy(app)
 
 # ================= SABİT SEÇENEKLER =================
 OPERATIONS = ["1. Operasyon", "2. Operasyon", "Yargı", "Ayar"]
+CNC_LIST = [f"CNC{i}" for i in range(1, 9)]  # CNC1..CNC8
 
 # ================= MODELLER =================
 class User(db.Model):
@@ -49,7 +50,10 @@ class Part(db.Model):
 
 class Work(db.Model):
     id = db.Column(db.Integer, primary_key=True)
+
     operator = db.Column(db.String(50), nullable=False)
+    cnc = db.Column(db.String(20), nullable=False, default="CNC1")  # ✅ YENİ
+
     part_code = db.Column(db.String(200), nullable=False)
     operation = db.Column(db.String(20), nullable=False)
 
@@ -167,12 +171,15 @@ def operator_panel():
     part_codes = get_part_codes()
 
     if request.method == "POST":
+        cnc = request.form.get("cnc", "CNC1").strip()
+        if cnc not in CNC_LIST:
+            cnc = "CNC1"
+
         part_code = request.form.get("part_code", "").strip()
         operation = request.form.get("operation", "").strip()
         start_time = request.form.get("start_time", "")
         end_time = request.form.get("end_time", "")
 
-        # Form alanları kapanmayacak; kullanıcı ne girdiyse alıyoruz
         quantity = int(request.form.get("quantity", "0") or 0)
         process_min = int(request.form.get("process_min", "0") or 0)
         process_sec_part = int(request.form.get("process_sec_part", "0") or 0)
@@ -188,21 +195,21 @@ def operator_panel():
                 "operator.html",
                 operations=OPERATIONS,
                 part_codes=part_codes,
+                cnc_list=CNC_LIST,
                 message="Seçenek geçersiz!"
             )
 
-        # ✅ AYAR: Sadece bilgi kaydı.
-        # - Part tablosunda tanımlı olma zorunluluğu yok
-        # - Verim hesaplanmaz (0.0)
+        # ✅ AYAR: sadece kayıt (bilgi), verim yok, parça tanımı zorunlu değil
         if operation == "Ayar":
             new_work = Work(
                 operator=session["user"],
+                cnc=cnc,
                 part_code=part_code if part_code else "AYAR",
                 operation=operation,
                 start_time=start_time,
                 end_time=end_time,
-                process_time_sec=process_sec,     # girerse kaydediyoruz (ister 0)
-                quantity=quantity,               # girerse kaydediyoruz (ister 0)
+                process_time_sec=process_sec,  # girerse kaydediyoruz
+                quantity=quantity,            # girerse kaydediyoruz
                 downtime_reason=downtime_reason if downtime_reason else None,
                 downtime_seconds=downtime_seconds,
                 efficiency=0.0
@@ -214,16 +221,18 @@ def operator_panel():
                 "operator.html",
                 operations=OPERATIONS,
                 part_codes=part_codes,
-                message="Ayar kaydı alınmıştır (verime dahil edilmez)."
+                cnc_list=CNC_LIST,
+                message="Ayar kaydı alındı (verime dahil edilmez)."
             )
 
-        # ✅ Diğer operasyonlar: Part tanımı şart + verim hesaplanır
+        # Diğer operasyonlar: parça+operasyon tanımlı olmalı
         part = Part.query.filter_by(part_code=part_code, operation=operation).first()
         if not part:
             return render_template(
                 "operator.html",
                 operations=OPERATIONS,
                 part_codes=part_codes,
+                cnc_list=CNC_LIST,
                 message="Bu parça + bu seçenek admin tarafından tanımlı değil!"
             )
 
@@ -238,6 +247,7 @@ def operator_panel():
 
         new_work = Work(
             operator=session["user"],
+            cnc=cnc,
             part_code=part_code,
             operation=operation,
             start_time=start_time,
@@ -248,6 +258,7 @@ def operator_panel():
             downtime_seconds=downtime_seconds,
             efficiency=efficiency
         )
+
         db.session.add(new_work)
         db.session.commit()
 
@@ -255,10 +266,11 @@ def operator_panel():
             "operator.html",
             operations=OPERATIONS,
             part_codes=part_codes,
+            cnc_list=CNC_LIST,
             message="Kayıt alınmıştır."
         )
 
-    return render_template("operator.html", operations=OPERATIONS, part_codes=part_codes)
+    return render_template("operator.html", operations=OPERATIONS, part_codes=part_codes, cnc_list=CNC_LIST)
 
 @app.route("/admin", methods=["GET", "POST"])
 def admin():
@@ -394,7 +406,7 @@ def admin():
                     if not message:
                         message = f"Excel yükleme hatası: {e}"
 
-    # Haftalık sıralama (son 7 gün) - ✅ AYAR hariç
+    # Haftalık sıralama - ✅ AYAR hariç
     week_start = datetime.now() - timedelta(days=7)
     weekly_rows = (
         db.session.query(
@@ -484,7 +496,7 @@ def ensure_db_and_admin():
                 )
                 db.session.commit()
 
-        # İlk çalıştırmada hiç mola yoksa örnek molaları ekle
+        # İlk çalıştırmada mola yoksa örnek ekle
         if BreakTime.query.count() == 0:
             db.session.add(BreakTime(start_time="09:45", end_time="10:00"))
             db.session.add(BreakTime(start_time="12:30", end_time="13:00"))
