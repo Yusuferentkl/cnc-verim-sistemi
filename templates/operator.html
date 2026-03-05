@@ -1,222 +1,134 @@
-<!DOCTYPE html>
-<html lang="tr">
-<head>
-<meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-<title>Operatör Paneli</title>
+<h2>Operatör Paneli</h2>
 
-<style>
-:root{
-  --bg:#0f0f0f;
-  --card:rgba(20,20,20,.85);
-  --text:#f5f5f5;
-  --muted:#cfcfcf;
-  --border:rgba(255,120,0,.25);
-  --ring:rgba(255,120,0,.35);
-  --btn1:#ff7a00;
-  --btn2:#ff3c00;
-}
-*{ box-sizing:border-box; }
+<form method="POST">
 
-body{ margin:0; background:var(--bg); color:var(--text); font-family:Segoe UI, sans-serif; padding:20px; }
-a{ color:#ffb26a; text-decoration:none; }
+CNC
 
-.top{ display:flex; justify-content:space-between; align-items:center; margin-bottom:20px; flex-wrap:wrap; }
+<select name="cnc">
 
-.card{
-  background:var(--card);
-  border:1px solid var(--border);
-  border-radius:18px;
-  padding:20px;
-  box-shadow:0 0 40px rgba(255,120,0,.18);
-}
+{% for c in cnc_list %}
+<option value="{{c}}">{{c}}</option>
+{% endfor %}
 
-.msg{
-  margin-bottom:15px;
-  padding:10px;
-  border-radius:12px;
-  border:1px solid rgba(255,120,0,.3);
-  background:rgba(255,120,0,.08);
-}
+</select>
 
-label{ display:block; font-size:13px; color:var(--muted); margin:12px 0 6px; }
+<br>
 
-input, select{
-  width:100%;
-  padding:10px 12px;
-  border-radius:12px;
-  border:1px solid var(--border);
-  background:rgba(0,0,0,.35);
-  color:var(--text);
-  outline:none;
-}
+Parça
 
-input:focus, select:focus{ box-shadow:0 0 0 3px var(--ring); }
+<input list="parcalar" name="part_code">
 
-.grid{ display:grid; grid-template-columns: repeat(2, 1fr); gap:15px; }
-@media(max-width:768px){ .grid{ grid-template-columns:1fr; } }
+<datalist id="parcalar">
 
-.row3{ display:grid; grid-template-columns: 2fr 1fr 1fr; gap:15px; }
-@media(max-width:768px){ .row3{ grid-template-columns:1fr; } }
+{% for p in part_codes %}
+<option value="{{p}}">
+{% endfor %}
 
-button{
-  width:100%;
-  margin-top:20px;
-  padding:13px;
-  border:none;
-  border-radius:12px;
-  background:linear-gradient(135deg,var(--btn1),var(--btn2));
-  color:white;
-  font-weight:700;
-  cursor:pointer;
-  box-shadow:0 10px 30px rgba(255,100,0,.25);
-}
-button:hover{ opacity:.95; }
+</datalist>
 
-.small{ font-size:12px; color:var(--muted); margin-top:5px; }
-hr{ border-color:rgba(255,120,0,.2); margin:25px 0; }
-</style>
-</head>
+<br>
 
-<body>
-<div class="top">
-  <h2>Operatör Paneli</h2>
-  <a href="/logout">Çıkış Yap</a>
-</div>
+Operasyon
 
-{% if message %}
-  <div class="msg">{{ message }}</div>
-{% endif %}
+<select name="operation">
 
-<div class="card">
-<form method="post">
+{% for o in operations %}
+<option value="{{o}}">{{o}}</option>
+{% endfor %}
 
-  <div class="grid">
-    <!-- CNC -->
-    <div>
-      <label>CNC</label>
-      <select name="cnc" required>
-        {% for c in cnc_list %}
-          <option value="{{ c }}">{{ c }}</option>
-        {% endfor %}
-      </select>
-    </div>
+</select>
 
-    <!-- OPERASYON -->
-    <div>
-      <label>Operasyon</label>
-      <select name="operation" required>
-        {% for op in operations %}
-          <option value="{{ op }}">{{ op }}</option>
-        {% endfor %}
-      </select>
-      <div class="small">Ayar kayıtları verime dahil edilmez.</div>
-    </div>
+<br>
 
-    <!-- PARÇA -->
-    <div>
-      <label>Parça</label>
-      <input list="part_list" name="part_code" placeholder="Parça yaz veya seç...">
-      <datalist id="part_list">
-        {% for p in part_codes %}
-          <option value="{{ p }}">
-        {% endfor %}
-      </datalist>
-      <div class="small">Ayar için boş bırakabilirsin.</div>
-    </div>
+Başlangıç
 
-    <div>
-      <label>Başlangıç</label>
-      <input type="time" name="start_time" required>
-    </div>
+<input type="time" name="start_time">
 
-    <div>
-      <label>Bitiş</label>
-      <input type="time" name="end_time" required>
-    </div>
+Bitiş
 
-    <div>
-      <label>Üretilen Adet</label>
-      <input type="number" name="quantity" min="0" value="0" required>
-    </div>
-  </div>
+<input type="time" name="end_time">
 
-  <hr>
+<br>
 
-  <h3>Parça Başına İşleme Süresi</h3>
-  <div class="row3">
-    <div>
-      <label>Açıklama</label>
-      <input type="text" value="İşleme süresi (parça başına)" disabled>
-      <div class="small">Ayar için 0 bırakabilirsin.</div>
-    </div>
-    <div>
-      <label>Dakika</label>
-      <input type="number" name="process_min" min="0" value="0" required>
-    </div>
-    <div>
-      <label>Saniye</label>
-      <input type="number" name="process_sec_part" min="0" max="59" value="0" required>
-    </div>
-  </div>
+Adet
 
-  <hr>
+<input type="number" name="quantity" value="0">
 
-  <h3>Kayıp Zaman</h3>
-  <div class="grid">
-    <div>
-      <label>Kayıp Nedeni</label>
-      <input type="text" name="downtime_reason" placeholder="Örn: takım kırıldı, arıza, bekleme...">
-    </div>
+<br>
 
-    <div class="row3" style="grid-column: 1 / -1;">
-      <div>
-        <label>Açıklama</label>
-        <input type="text" value="Kayıp süre (toplam)" disabled>
-      </div>
-      <div>
-        <label>Dakika</label>
-        <input type="number" name="downtime_min" min="0" value="0">
-      </div>
-      <div>
-        <label>Saniye</label>
-        <input type="number" name="downtime_sec_part" min="0" max="59" value="0">
-      </div>
-    </div>
-  </div>
+Parça süresi
 
-  <button type="submit">Kaydı Gönder</button>
+<input type="number" name="process_min" value="0"> dk
+
+<input type="number" name="process_sec_part" value="0"> sn
+
+<br>
+
+Kayıp zaman
+
+<input type="number" name="downtime_min" value="0"> dk
+
+<input type="number" name="downtime_sec_part" value="0"> sn
+
+<br>
+
+Sebep
+
+<input name="downtime_reason">
+
+<br>
+
+<button>Kayıt</button>
+
 </form>
-</div>
 
-<script>
-const zeroFields = [
-  'quantity',
-  'process_min',
-  'process_sec_part',
-  'downtime_min',
-  'downtime_sec_part'
-];
 
-function attachZeroBehavior(input) {
-  input.addEventListener('focus', () => {
-    if (input.value === '0') input.value = '';
-  });
-  input.addEventListener('blur', () => {
-    if (input.value.trim() === '') input.value = '0';
-  });
-}
+<hr>
 
-window.addEventListener('load', () => {
-  zeroFields.forEach(name => {
-    document.querySelectorAll(`input[name="${name}"]`).forEach(attachZeroBehavior);
-  });
+<h3>Kendi Kayıtlarım</h3>
 
-  document.querySelectorAll('input[type="number"]').forEach(inp => {
-    inp.addEventListener('wheel', () => inp.blur(), { passive: true });
-  });
-});
-</script>
+<table border="1">
 
-</body>
-</html>
+<tr>
+
+<th>Tarih</th>
+<th>CNC</th>
+<th>Parça</th>
+<th>Operasyon</th>
+<th>Baş</th>
+<th>Bitiş</th>
+<th>Parça Süresi</th>
+<th>Adet</th>
+
+</tr>
+
+{% for w in works %}
+
+<tr>
+
+<td>{{w.date}}</td>
+
+<td>{{w.cnc}}</td>
+
+<td>{{w.part_code}}</td>
+
+<td>{{w.operation}}</td>
+
+<td>{{w.start_time}}</td>
+
+<td>{{w.end_time}}</td>
+
+<td>
+
+{{w.process_time_sec//60}} dk
+{{w.process_time_sec%60}} sn
+
+</td>
+
+<td>{{w.quantity}}</td>
+
+</tr>
+
+{% endfor %}
+
+</table>
