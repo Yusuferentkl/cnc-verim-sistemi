@@ -1,134 +1,192 @@
-<h2>Operatör Paneli</h2>
+<!doctype html>
+<html lang="tr">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>Operatör</title>
+<style>
+:root{--bg:#0f0f0f;--card:rgba(20,20,20,.85);--text:#f5f5f5;--muted:#cfcfcf;--b:rgba(255,120,0,.25);--ring:rgba(255,120,0,.35);--a:#ff7a00;--a2:#ff3c00;--danger:#d9534f;}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--text);font-family:Segoe UI, sans-serif;padding:18px}
+a{color:#ffb26a;text-decoration:none}
+.top{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:12px}
+.card{background:var(--card);border:1px solid var(--b);border-radius:18px;padding:18px;box-shadow:0 0 40px rgba(255,120,0,.18);margin-bottom:14px}
+label{display:block;font-size:13px;color:var(--muted);margin:10px 0 6px}
+input,select{width:100%;padding:10px 12px;border-radius:12px;border:1px solid var(--b);background:rgba(0,0,0,.35);color:var(--text);outline:none}
+input:focus,select:focus{box-shadow:0 0 0 3px var(--ring)}
+.grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+@media(max-width:820px){.grid{grid-template-columns:1fr}}
+.row3{display:grid;grid-template-columns:2fr 1fr 1fr;gap:12px}
+@media(max-width:820px){.row3{grid-template-columns:1fr}}
+button{width:100%;margin-top:14px;padding:12px;border:none;border-radius:12px;background:linear-gradient(135deg,var(--a),var(--a2));color:white;font-weight:700;cursor:pointer}
+.msg{margin-bottom:12px;padding:10px;border-radius:12px;border:1px solid rgba(255,120,0,.3);background:rgba(255,120,0,.08)}
+hr{border-color:rgba(255,120,0,.18);margin:18px 0}
+table{width:100%;border-collapse:collapse}
+th,td{padding:10px;border-bottom:1px solid rgba(255,255,255,.08);text-align:left;vertical-align:top}
+th{color:#ffb26a}
+.small{font-size:12px;color:var(--muted)}
+</style>
+</head>
+<body>
 
-<form method="POST">
+<div class="top">
+  <h2 style="margin:0;">Operatör Paneli</h2>
+  <a href="/logout">Çıkış Yap</a>
+</div>
 
-CNC
+{% if message %}
+  <div class="msg">{{ message }}</div>
+{% endif %}
 
-<select name="cnc">
+<div class="card">
+  <form method="post">
+    <div class="grid">
+      <div>
+        <label>CNC</label>
+        <select name="cnc" required>
+          {% for c in cnc_list %}
+            <option value="{{ c }}">{{ c }}</option>
+          {% endfor %}
+        </select>
+      </div>
 
-{% for c in cnc_list %}
-<option value="{{c}}">{{c}}</option>
-{% endfor %}
+      <div>
+        <label>Operasyon</label>
+        <select name="operation" required>
+          {% for op in operations %}
+            <option value="{{ op }}">{{ op }}</option>
+          {% endfor %}
+        </select>
+        <div class="small">Ayar kayıtları verime dahil edilmez.</div>
+      </div>
 
-</select>
+      <div>
+        <label>Parça</label>
+        <input list="part_list" name="part_code" placeholder="Parça yaz veya seç">
+        <datalist id="part_list">
+          {% for p in part_codes %}
+            <option value="{{ p }}"></option>
+          {% endfor %}
+        </datalist>
+        <div class="small">Ayar için boş bırakabilirsin.</div>
+      </div>
 
-<br>
+      <div>
+        <label>Üretilen Adet</label>
+        <input type="number" name="quantity" min="0" value="0" required>
+      </div>
 
-Parça
+      <div>
+        <label>Başlangıç</label>
+        <input type="time" name="start_time" required>
+      </div>
 
-<input list="parcalar" name="part_code">
+      <div>
+        <label>Bitiş</label>
+        <input type="time" name="end_time" required>
+      </div>
+    </div>
 
-<datalist id="parcalar">
+    <hr>
 
-{% for p in part_codes %}
-<option value="{{p}}">
-{% endfor %}
+    <h3 style="margin:0 0 10px;">Parça Başına İşleme Süresi</h3>
+    <div class="row3">
+      <div>
+        <label>Açıklama</label>
+        <input value="İşleme süresi (parça başına)" disabled>
+      </div>
+      <div>
+        <label>Dakika</label>
+        <input type="number" name="process_min" min="0" value="0" required>
+      </div>
+      <div>
+        <label>Saniye</label>
+        <input type="number" name="process_sec_part" min="0" max="59" value="0" required>
+      </div>
+    </div>
 
-</datalist>
+    <hr>
 
-<br>
+    <h3 style="margin:0 0 10px;">Kayıp Zaman</h3>
+    <div class="grid">
+      <div>
+        <label>Kayıp Nedeni</label>
+        <input name="downtime_reason" placeholder="Örn: arıza, bekleme...">
+      </div>
 
-Operasyon
+      <div class="row3" style="grid-column:1/-1;">
+        <div>
+          <label>Açıklama</label>
+          <input value="Kayıp süre (toplam)" disabled>
+        </div>
+        <div>
+          <label>Dakika</label>
+          <input type="number" name="downtime_min" min="0" value="0">
+        </div>
+        <div>
+          <label>Saniye</label>
+          <input type="number" name="downtime_sec_part" min="0" max="59" value="0">
+        </div>
+      </div>
+    </div>
 
-<select name="operation">
+    <button type="submit">Kaydı Gönder</button>
+  </form>
+</div>
 
-{% for o in operations %}
-<option value="{{o}}">{{o}}</option>
-{% endfor %}
+<div class="card">
+  <h3 style="margin:0 0 10px;">Kendi Kayıtlarım (Son 100)</h3>
+  <div class="small">Not: Verim (%) operatöre gösterilmez.</div>
 
-</select>
+  <table>
+    <thead>
+      <tr>
+        <th>Tarih</th>
+        <th>CNC</th>
+        <th>Parça</th>
+        <th>Operasyon</th>
+        <th>Başla</th>
+        <th>Bitir</th>
+        <th>Net Süre</th>
+        <th>Parça Süresi</th>
+        <th>Adet</th>
+        <th>Kayıp</th>
+        <th>Neden</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for w in works %}
+      <tr>
+        <td>{{ w.date.strftime("%d.%m.%Y %H:%M") }}</td>
+        <td>{{ w.cnc }}</td>
+        <td>{{ w.part_code }}</td>
+        <td>{{ w.operation }}</td>
+        <td>{{ w.start_time }}</td>
+        <td>{{ w.end_time }}</td>
+        <td>{{ w.net_human }}</td>
+        <td>{{ w.proc_human }}</td>
+        <td>{{ w.quantity }}</td>
+        <td>{{ w.downtime_seconds }}</td>
+        <td>{{ w.downtime_reason or "" }}</td>
+      </tr>
+      {% endfor %}
+      {% if works|length == 0 %}
+      <tr><td colspan="11" class="small">Henüz kayıt yok.</td></tr>
+      {% endif %}
+    </tbody>
+  </table>
+</div>
 
-<br>
+<script>
+const zeroFields = ['quantity','process_min','process_sec_part','downtime_min','downtime_sec_part'];
+function attachZeroBehavior(input){
+  input.addEventListener('focus',()=>{ if(input.value==='0') input.value=''; });
+  input.addEventListener('blur',()=>{ if(input.value.trim()==='') input.value='0'; });
+}
+window.addEventListener('load',()=>{
+  zeroFields.forEach(n=>document.querySelectorAll(`input[name="${n}"]`).forEach(attachZeroBehavior));
+});
+</script>
 
-Başlangıç
-
-<input type="time" name="start_time">
-
-Bitiş
-
-<input type="time" name="end_time">
-
-<br>
-
-Adet
-
-<input type="number" name="quantity" value="0">
-
-<br>
-
-Parça süresi
-
-<input type="number" name="process_min" value="0"> dk
-
-<input type="number" name="process_sec_part" value="0"> sn
-
-<br>
-
-Kayıp zaman
-
-<input type="number" name="downtime_min" value="0"> dk
-
-<input type="number" name="downtime_sec_part" value="0"> sn
-
-<br>
-
-Sebep
-
-<input name="downtime_reason">
-
-<br>
-
-<button>Kayıt</button>
-
-</form>
-
-
-<hr>
-
-<h3>Kendi Kayıtlarım</h3>
-
-<table border="1">
-
-<tr>
-
-<th>Tarih</th>
-<th>CNC</th>
-<th>Parça</th>
-<th>Operasyon</th>
-<th>Baş</th>
-<th>Bitiş</th>
-<th>Parça Süresi</th>
-<th>Adet</th>
-
-</tr>
-
-{% for w in works %}
-
-<tr>
-
-<td>{{w.date}}</td>
-
-<td>{{w.cnc}}</td>
-
-<td>{{w.part_code}}</td>
-
-<td>{{w.operation}}</td>
-
-<td>{{w.start_time}}</td>
-
-<td>{{w.end_time}}</td>
-
-<td>
-
-{{w.process_time_sec//60}} dk
-{{w.process_time_sec%60}} sn
-
-</td>
-
-<td>{{w.quantity}}</td>
-
-</tr>
-
-{% endfor %}
-
-</table>
+</body>
+</html>

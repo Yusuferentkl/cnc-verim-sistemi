@@ -1,179 +1,39 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="tr">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>CNC Verim Sistemi - Giriş</title>
-
-<style>
-:root{
-  --text:#f5f5f5;
-  --muted:#cfcfcf;
-  --card:rgba(20,20,20,.85);
-  --border:rgba(255,120,0,.25);
-  --ring:rgba(255,120,0,.35);
-  --btn1:#ff7a00;
-  --btn2:#ff3c00;
-}
-
-*{
-  box-sizing:border-box;
-}
-
-body{
-  margin:0;
-  min-height:100vh;
-  display:flex;
-  align-items:center;
-  justify-content:center;
-  font-family:Segoe UI, sans-serif;
-  color:var(--text);
-
-  background:
-    linear-gradient(rgba(0,0,0,.65), rgba(0,0,0,.65)),
-    url("{{ url_for('static', filename='images/company-bg.jpg') }}")
-    center/cover no-repeat;
-}
-
-/* Konteyner */
-.container{
-  width:400px;
-  max-width:92%;
-}
-
-/* Üst marka alanı */
-.brand{
-  display:flex;
-  align-items:center;
-  gap:14px;
-  margin-bottom:22px;
-}
-
-.logo{
-  width:50px;
-  height:50px;
-  border-radius:14px;
-  background:linear-gradient(135deg,#ff7a00,#ff3c00);
-  box-shadow:0 12px 35px rgba(255,120,0,.4);
-}
-
-.brand-text h1{
-  margin:0;
-  font-size:20px;
-}
-
-.brand-text p{
-  margin:4px 0 0 0;
-  font-size:13px;
-  color:var(--muted);
-}
-
-/* Kart */
-.card{
-  background:var(--card);
-  border:1px solid var(--border);
-  border-radius:18px;
-  padding:28px;
-  box-shadow:
-      0 0 45px rgba(255,120,0,.25),
-      0 25px 70px rgba(0,0,0,.7);
-  backdrop-filter:blur(10px);
-}
-
-.card h2{
-  margin-top:0;
-  margin-bottom:10px;
-}
-
-.subtitle{
-  font-size:14px;
-  color:var(--muted);
-  margin-bottom:20px;
-}
-
-label{
-  display:block;
-  font-size:13px;
-  margin:12px 0 6px 0;
-}
-
-input{
-  width:100%;
-  padding:12px;
-  border-radius:12px;
-  border:1px solid var(--border);
-  background:rgba(0,0,0,.35);
-  color:var(--text);
-  outline:none;
-  transition:.2s;
-}
-
-input:focus{
-  border-color:#ff7a00;
-  box-shadow:0 0 0 3px var(--ring);
-}
-
-/* Buton */
-button{
-  width:100%;
-  margin-top:18px;
-  padding:13px;
-  border:none;
-  border-radius:12px;
-  background:linear-gradient(135deg,var(--btn1),var(--btn2));
-  color:white;
-  font-weight:700;
-  cursor:pointer;
-  transition:.2s;
-  box-shadow:0 10px 30px rgba(255,100,0,.35);
-}
-
-button:hover{
-  transform:translateY(-2px);
-  box-shadow:0 15px 40px rgba(255,100,0,.45);
-}
-
-.footer{
-  margin-top:16px;
-  text-align:center;
-  font-size:12px;
-  color:#bdbdbd;
-}
-</style>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Giriş</title>
+  <style>
+    :root{--bg:#0f0f0f;--card:rgba(20,20,20,.88);--text:#f5f5f5;--muted:#cfcfcf;--b:rgba(255,120,0,.25);--ring:rgba(255,120,0,.35);--a:#ff7a00;--a2:#ff3c00;}
+    *{box-sizing:border-box}
+    body{margin:0;min-height:100vh;display:flex;align-items:center;justify-content:center;background:var(--bg);color:var(--text);font-family:Segoe UI, sans-serif;padding:20px}
+    .card{width:min(420px,100%);background:var(--card);border:1px solid var(--b);border-radius:18px;padding:22px;box-shadow:0 0 40px rgba(255,120,0,.18)}
+    h2{margin:0 0 14px}
+    label{display:block;font-size:13px;color:var(--muted);margin:12px 0 6px}
+    input{width:100%;padding:11px 12px;border-radius:12px;border:1px solid var(--b);background:rgba(0,0,0,.35);color:var(--text);outline:none}
+    input:focus{box-shadow:0 0 0 3px var(--ring)}
+    button{width:100%;margin-top:16px;padding:12px;border:none;border-radius:12px;background:linear-gradient(135deg,var(--a),var(--a2));color:white;font-weight:700;cursor:pointer}
+    .msg{margin:10px 0 0;padding:10px;border-radius:12px;border:1px solid rgba(255,120,0,.3);background:rgba(255,120,0,.08)}
+  </style>
 </head>
-
 <body>
-
-<div class="container">
-
-  <div class="brand">
-    <div class="logo"></div>
-    <div class="brand-text">
-      <h1>CNC Verim Sistemi</h1>
-      <p>Operatör ve Admin giriş ekranı</p>
-    </div>
-  </div>
-
   <div class="card">
-    <h2>Giriş</h2>
-    <div class="subtitle">
-      Kullanıcı adın ve şifrenle giriş yap. Yetkine göre panel açılır.
-    </div>
+    <h2>CNC Verim Sistemi</h2>
 
-    <form method="post" action="/login">
-      <label>Kullanıcı adı</label>
-      <input type="text" name="username" placeholder="örn: operator1" required>
+    {% if message %}
+      <div class="msg">{{ message }}</div>
+    {% endif %}
+
+    <form method="post">
+      <label>Kullanıcı Adı</label>
+      <input name="username" autocomplete="username" required>
 
       <label>Şifre</label>
-      <input type="password" name="password" placeholder="••••••••" required>
+      <input name="password" type="password" autocomplete="current-password" required>
 
-      <button type="submit">Giriş Yap</button>
+      <button type="submit">Giriş</button>
     </form>
-
-    <div class="footer">© CNC Verim</div>
   </div>
-
-</div>
-
 </body>
 </html>
